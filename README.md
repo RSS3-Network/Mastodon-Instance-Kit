@@ -1,7 +1,5 @@
 # Mastodon-plugin
 
-# Kafka Sender
-
 This repository builds Mastodon Plugin (a backend service) to handle ActivityPub events and direct them to local Kafka Broker. 
 
 Any Mastodon Instance operator can run the Plugin as a docker-service in the `docker-compose.yaml` file of the Mastodon repository. The **Pre-built Image** is provided. 
