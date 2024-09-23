@@ -1,14 +1,11 @@
 # Mastodon-plugin
 
-This repository builds Mastodon Plugin (a backend service) to handle ActivityPub events and direct them to local Kafka Broker. 
+Mastodon Plugin is a backend service that handles ActivityPub events and directs them to a local Kafka Broker. It's designed for Mastodon Instance operators to easily integrate with their existing setup:
 
-Any Mastodon Instance operator can run the Plugin as a docker-service in the `docker-compose.yaml` file of the Mastodon repository. The **Pre-built Image** is provided. 
+- Run as a Docker service in your Mastodon's `docker-compose.yaml` file (pre-built image available)
+- Update Nginx configuration to forward /inbox requests to the plugin service
+- Configure necessary env variables in the `kafka_sender` section of the `docker-compose.yaml` or in the `.env.production` file
 
-Then it's needed to update the Nginx configuration forward /inbox requests to the kafka_sender service.
-
-Now, you should be ready to go!
-
-Note: Some configuration is required in `.env.production` file of the Mastodon repository. (details below)
 
 ## Usage
 
@@ -59,7 +56,7 @@ docker push ghcr.io/{your-username}/mastodon-plugin-image:latest
 ```
 
 ## Configuration Requirement:
-Ensure that the **KAFKA_BROKER** and **KAFKA_TOPIC** environment variables are set correctly in your **docker-compose.yml** file or through a .env file.
+Ensure that the **KAFKA_BROKER** and **KAFKA_TOPIC** environment variables are set correctly in your `docker-compose.yml` file or through a `.env.production` file.
 You can customize the behavior of the Kafka sender by modifying kafka_sender.py.
 
 Example:
