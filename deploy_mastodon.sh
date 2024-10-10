@@ -366,6 +366,9 @@ sudo chown -R 1001:1001 ./public/system
 sudo chmod -R 755 /opt/mastodon/public/system
 sudo chmod -R 775 /opt/mastodon/public/system/cache
 
+sudo chown -R 1001:1001 /opt/mastodon/tmp
+sudo chmod -R 775 /opt/mastodon/tmp
+
 # sudo adduser --system --group --no-create-home mastodon
 
 
