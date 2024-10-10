@@ -28,21 +28,16 @@ This approach is ideal for those who want a simple solution that's operational r
   - Minimum 4GB RAM (8GB recommended)
   - At least 20GB of storage space (40GB recommended)
 - Open ports: 80 (HTTP), 443 (HTTPS), 9092 (Kafka)
-
-The deployment script will check for and attempt to install the following prerequisites if they're missing:
-* `Docker` and `Docker Compose`
-* `git`
-* `curl`
-* `certbot`
+- `Docker` and `Docker Compose` installed
+- `git`, `curl`, and `certbot` installed
   
-Note: Automatic installation requires root or sudo privileges. If you prefer to install these tools manually, please do so before running the deployment script.
-
 ### Deployment Steps
 
 1. Clone this repository:
 
    ```sh
-   git clone https://github.com/your-username/mastodon-plugin.git
+   git clone https://github.com/RSS3-Network/Mastodon-Instance-Kit.git
+   cd Mastodon-Instance-Kit
    ```
 
 2. Set the required environment variables:
