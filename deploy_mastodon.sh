@@ -483,6 +483,13 @@ ROLE="Admin"
  # fi
 # fi
 
+
+# Approve the admin account
+echo "Approving admin account..."
+sudo docker-compose exec -T web bin/tootctl accounts approve $ADMIN_USERNAME
+
+
+
 # Add relay services to the mastodon instance for receiving mastodon data
 echo "Adding relay services directly to the database..."
 # SQL command to add relay services
