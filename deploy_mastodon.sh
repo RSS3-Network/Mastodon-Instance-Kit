@@ -444,9 +444,9 @@ END
 echo "Running database migrations..."
 docker_compose_sudo run --rm web rails db:migrate
 
-# Precompile assets
-echo "Precompiling assets...(This step could take several minutes to complete)"
-docker_compose_sudo run --rm web rails assets:precompile
+## Precompile assets
+#echo "Precompiling assets...(This step could take several minutes to complete)"
+#docker_compose_sudo run --rm web rails assets:precompile
 
 # Create first admin user
 ADMIN_EMAIL="superadmin@$DOMAIN_NAME"  # Use a valid-formatted but non-functional email
