@@ -28,12 +28,12 @@ This approach is ideal for those who want a simple solution that's operational r
   - Minimum 4GB RAM (8GB recommended)
   - At least 20GB of storage space (40GB recommended)
 - Open ports: 80 (HTTP), 443 (HTTPS), 9092 (Kafka)
-- `Docker`, `Docker Compose`, `git`, `curl`, `dnsutils`, 'nginx' and `certbot` installed
+- `Docker`, `Docker Compose`, `git`, `curl`, `dnsutils`, `nginx` and `certbot` installed
   
 ### Deployment Steps
 
 1. Manually install Prerequisite tools on the server
-    - `Docker`, `Docker Compose`, `git`, `curl`, `dnsutils`, 'nginx' and `certbot`
+    - `Docker`, `Docker Compose`, `git`, `curl`, `dnsutils`, `nginx` and `certbot`
 
 3. Clone this repository:
 
