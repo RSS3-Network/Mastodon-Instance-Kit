@@ -416,36 +416,36 @@ ADMIN_USERNAME="superadmin"
 ROLE="Admin"
 
 # Before creating the admin user, check if it already exists
-ADMIN_EXISTS=$(sudo docker-compose exec web tootctl accounts show $ADMIN_USERNAME 2>&1)
-if [[ "$ADMIN_EXISTS" != *"No user with such username"* ]]; then
-    echo "Admin user $ADMIN_USERNAME already exists. Skipping creation."
+# ADMIN_EXISTS=$(sudo docker-compose exec web tootctl accounts show $ADMIN_USERNAME 2>&1)
+# if [[ "$ADMIN_EXISTS" != *"No user with such username"* ]]; then
+  #  echo "Admin user $ADMIN_USERNAME already exists. Skipping creation."
+#else
+# Create the admin user without email confirmation
+echo "Creating admin user $ADMIN_USERNAME without email service..."
+sudo docker-compose exec web tootctl accounts create $ADMIN_USERNAME --email $ADMIN_EMAIL --confirmed
+
+echo "Remember to keep the generated admin password displayed here to log in for the first time."
+# Check if the user creation succeeded
+USER_EXISTS=$(sudo docker-compose exec web tootctl accounts modify $ADMIN_USERNAME --confirm --approve 2>&1)
+
+if [[ "$USER_EXISTS" == *"No user with such username"* ]]; then
+    echo "Error: Failed to create the admin user $ADMIN_USERNAME. Please check the logs for details."
+    exit 1
 else
-  # Create the admin user without email confirmation
-  echo "Creating admin user $ADMIN_USERNAME without email service..."
-  sudo docker-compose exec web tootctl accounts create $ADMIN_USERNAME --email $ADMIN_EMAIL --confirmed
+    echo "Admin user $ADMIN_USERNAME created successfully."
 
-  echo "Remember to keep the generated admin password displayed here to log in for the first time."
-  # Check if the user creation succeeded
-  USER_EXISTS=$(sudo docker-compose exec web tootctl accounts modify $ADMIN_USERNAME --confirm --approve 2>&1)
+    # Assign the Admin role to the user
+    echo "Assigning the $ROLE role to $ADMIN_USERNAME..."
+    sudo docker-compose exec web tootctl accounts modify $ADMIN_USERNAME --role $ROLE
 
-  if [[ "$USER_EXISTS" == *"No user with such username"* ]]; then
-      echo "Error: Failed to create the admin user $ADMIN_USERNAME. Please check the logs for details."
-      exit 1
-  else
-      echo "Admin user $ADMIN_USERNAME created successfully."
+    # Disable 2FA and skip sign-in token (since there's no email service)
+    echo "Disabling 2FA and skipping sign-in token for $ADMIN_USERNAME..."
+    sudo docker-compose exec web tootctl accounts modify $ADMIN_USERNAME --disable-2fa
 
-      # Assign the Admin role to the user
-      echo "Assigning the $ROLE role to $ADMIN_USERNAME..."
-      sudo docker-compose exec web tootctl accounts modify $ADMIN_USERNAME --role $ROLE
+    echo "Admin user $ADMIN_USERNAME has been successfully created and assigned the $ROLE role!"
 
-      # Disable 2FA and skip sign-in token (since there's no email service)
-      echo "Disabling 2FA and skipping sign-in token for $ADMIN_USERNAME..."
-      sudo docker-compose exec web tootctl accounts modify $ADMIN_USERNAME --disable-2fa
-
-      echo "Admin user $ADMIN_USERNAME has been successfully created and assigned the $ROLE role!"
-
-  fi
 fi
+#fi
 
 # Create necessary directories
 sudo mkdir -p /opt/mastodon/public/system/cache
