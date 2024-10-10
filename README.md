@@ -1,17 +1,23 @@
-# Mastodon Plugin for RSS3 Node Integration
+# Mastodon Instance Kit for RSS3 Node Integration
 
-This repository provides tools to set up a Mastodon instance for integration with RSS3 nodes. 
+This repository provides tools to help you obtain a valid Mastodon endpoint (`mastodon_instance_external_ip:port`) for node deployment with a Mastodon worker at the [RSS3 Explorer](https://explorer.rss3.io/).
 
-The primary goal is to help you obtain a valid Mastodon endpoint (`mastodon_instance_external_ip:port`) for node deployment with a Mastodon worker at the [RSS3 Explorer](https://explorer.rss3.io/).
+## Two Options to Obtain Valid Mastodon Endpoints
 
-## Two Options for Mastodon Setup
+1. **Automated Mastodon Instance Deployment**: Quick setup of a new Mastodon instance.
+2. **Manual Mastodon Instance Modification**: Modify an existing Mastodon instance.
 
-1. **Automated Mastodon Deployment**: Quick setup of a new Mastodon instance.
-2. **Manual Integration**: Modify an existing Mastodon instance.
+Both options will guide you through the initial setup. Once completed, you'll obtain a valid Mastodon endpoint necessary for the RSS3 node deployment with a Mastodon worker at the RSS3 explorer.
 
-## Option 1: Automated Mastodon Deployment
+## Option 1: Automated Mastodon Instance Deployment
 
-For users who want to quickly set up a new Mastodon instance with RSS3 node integration.
+For users who want to quickly set up a new Mastodon instance with RSS3 node integration. It provides:
+- A streamlined setup process for a complete, ready-to-use Mastodon instance
+- Automatic configuration for RSS3 node integration
+- Pre-configured relay services, allowing your instance to receive messages from major Mastodon instances
+- Immediate functionality upon completion, with no additional setup required
+
+This approach is ideal for those who want a simple solution that's operational right after deployment, with built-in connectivity to the wider Mastodon network.
 
 ### Prerequisites
 
@@ -19,6 +25,11 @@ For users who want to quickly set up a new Mastodon instance with RSS3 node inte
 - A `domain name` pointing to your server's IP (Ensure DNS settings are correctly configured)
 - `Docker` and `Docker Compose` installed
 - `git`, `curl`, and `certbot` installed
+- Sufficient server hardware resources:
+  - At least 2 CPU cores
+  - Minimum 4GB RAM (8GB recommended)
+  - At least 20GB of storage space (40GB recommended)
+- Open ports: 80 (HTTP), 443 (HTTPS), 9092 (Kafka)
 
 ### Deployment Steps
 
@@ -52,7 +63,7 @@ For users who want to quickly set up a new Mastodon instance with RSS3 node inte
 - Log in and change the admin password immediately.
 - Review and adjust the instance settings as needed.
  
-## Option 2: Manual Integration with Existing Mastodon Instance
+## Option 2: Manual Mastodon Instance Modification
 
 For users who already have a Mastodon instance and want to integrate it with RSS3 node.
 
@@ -118,12 +129,6 @@ Run the following command to start the new services:
 docker-compose up kafka zookeeper kafka_sender
 ```
 
-Verify Kafka broker logs:
-
-```bash
-docker-compose logs kafka
-```
-
 #### 1.4 Update Nginx Configuration
 
 Add the following to your `/etc/nginx/sites-enabled/mastodon.conf` file:
@@ -150,7 +155,7 @@ sudo systemctl restart nginx
 
 ## Finished
 
-Congratulations! You have successfully set up your Mastodon instance, and now have a valid Mastodon endpoint for your RSS3 node.
+Congratulations! You now have a valid Mastodon endpoint for your RSS3 node.
 
 Your Mastodon endpoint is: `mastodon_instance_external_ip:9092`
 
@@ -164,8 +169,6 @@ Now that you have your Mastodon endpoint, you can proceed with the RSS3 node dep
 4. Choose to add a Mastodon worker.
 5. When prompted for a Mastodon endpoint, enter your endpoint: `your_external_ip:9092`.
 6. Complete the remaining steps as guided by the RSS3 Explorer.
-
-Note: If you've already deployed your node without the Mastodon worker, you can add it later through the node management interface on the RSS3 Explorer.
 
 ### Important Notes
 
