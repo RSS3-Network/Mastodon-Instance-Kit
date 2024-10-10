@@ -146,7 +146,6 @@ version: '3'
 services:
   db:
     restart: always
-    user: '1001:1001'
     image: postgres:14-alpine
     shm_size: 256mb
     healthcheck:
@@ -161,7 +160,6 @@ services:
       - "5432:5432"
   redis:
     restart: always
-    user: '1001:1001'
     image: redis:7-alpine
     healthcheck:
       test: ['CMD', 'redis-cli', 'ping']
@@ -222,7 +220,6 @@ services:
       test: ['CMD-SHELL', "ps aux | grep '[s]idekiq\ 6' || false"]
   zookeeper:
     image: wurstmeister/zookeeper
-    user: '1001:1001'
     ports:
       - "2181:2181"
     environment:
@@ -230,7 +227,6 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
   kafka:
     image: wurstmeister/kafka
-    user: '1001:1001'
     ports:
       - "9092:9092"
     env_file:
@@ -241,7 +237,6 @@ services:
       - zookeeper
   kafka_sender:
     image: ghcr.io/frankli123/mastodon-plugin-image:latest
-    user: '1001:1001'
     restart: always
     ports:
       - '3001:3001'
@@ -368,11 +363,12 @@ sudo mkdir -p /opt/mastodon/tmp
 sudo chown -R 1001:1001 /opt/mastodon/public/system/cache
 sudo chown -R 1001:1001 ./public/system
 sudo chown -R 1001:1001 /opt/mastodon/public
+sudo chown -R 1001:1001 /opt/mastodon/public/system
+sudo chown -R 1001:1001 /opt/mastodon/tmp
+
 # Set permissions
 sudo chmod -R 755 /opt/mastodon/public/system
 sudo chmod -R 775 /opt/mastodon/public/system/cache
-
-sudo chown -R 1001:1001 /opt/mastodon/tmp
 sudo chmod -R 775 /opt/mastodon/tmp
 
 # sudo adduser --system --group --no-create-home mastodon
@@ -445,8 +441,8 @@ echo "Running database migrations..."
 docker_compose_sudo run --rm web rails db:migrate
 
 ## Precompile assets
-#echo "Precompiling assets...(This step could take several minutes to complete)"
-#docker_compose_sudo run --rm web rails assets:precompile
+echo "Precompiling assets...(This step could take several minutes to complete)"
+# docker_compose_sudo run --rm web rails assets:precompile
 
 # Create first admin user
 ADMIN_EMAIL="superadmin@$DOMAIN_NAME"  # Use a valid-formatted but non-functional email
@@ -454,10 +450,10 @@ ADMIN_USERNAME="superadmin"
 ROLE="Admin"
 
 # Before creating the admin user, check if it already exists
- ADMIN_EXISTS=$(sudo docker-compose exec web tootctl accounts show $ADMIN_USERNAME 2>&1)
- if [[ "$ADMIN_EXISTS" != *"No user with such username"* ]]; then
-    echo "Admin user $ADMIN_USERNAME already exists. Skipping creation."
-else
+# ADMIN_EXISTS=$(sudo docker-compose exec web tootctl accounts show $ADMIN_USERNAME 2>&1)
+# if [[ "$ADMIN_EXISTS" != *"No user with such username"* ]]; then
+#    echo "Admin user $ADMIN_USERNAME already exists. Skipping creation."
+# else
 # Create the admin user without email confirmation
   echo "Creating admin user $ADMIN_USERNAME without email service..."
   sudo docker-compose exec web tootctl accounts create $ADMIN_USERNAME --email $ADMIN_EMAIL --confirmed
@@ -466,12 +462,12 @@ else
   sleep 5
 
   # Check if the user creation succeeded
-  USER_EXISTS=$(sudo docker-compose exec web tootctl accounts modify $ADMIN_USERNAME --confirm --approve 2>&1)
+  #USER_EXISTS=$(sudo docker-compose exec web tootctl accounts modify $ADMIN_USERNAME --confirm --approve 2>&1)
 
-  if [[ "$USER_EXISTS" == *"No user with such username"* ]]; then
-      echo "Error: Failed to create the admin user $ADMIN_USERNAME. Please check the logs for details."
-      exit 1
-  else
+  #if [[ "$USER_EXISTS" == *"No user with such username"* ]]; then
+   #   echo "Error: Failed to create the admin user $ADMIN_USERNAME. Please check the logs for details."
+    #  exit 1
+ # else
       echo "Admin user $ADMIN_USERNAME created successfully."
 
       # Assign the Admin role to the user
@@ -484,8 +480,8 @@ else
 
       echo "Admin user $ADMIN_USERNAME has been successfully created and assigned the $ROLE role!"
 
-  fi
-fi
+ # fi
+# fi
 
 # Add relay services to the mastodon instance for receiving mastodon data
 echo "Adding relay services directly to the database..."
@@ -513,8 +509,7 @@ VALUES
      ('https://relay.fedi.buzz/instance/qoto.org', NULL, NOW(), NOW(), 2),
    ('https://relay.fedi.buzz/instance/mastodon.xyz', NULL, NOW(), NOW(), 2),
  ('https://relay.fedi.buzz/instance/masto.ai', NULL, NOW(), NOW(), 2);
- ON CONFLICT (inbox_url) DO NOTHING;
-"
+ "
 
 # Execute the SQL commands in the Mastodon PostgreSQL database
 sudo docker-compose exec db psql -U mastodon -d mastodon -c "$SQL_COMMANDS"
