@@ -248,6 +248,7 @@ EOF
 
 # Set up Nginx
 echo "Setting up Nginx..."
+sudo mkdir -p /etc/nginx/sites-enabled/
 sudo tee /etc/nginx/sites-available/mastodon << EOF
 map \$http_upgrade \$connection_upgrade {
     default upgrade;
@@ -407,7 +408,7 @@ echo "Running database migrations..."
 docker_compose_sudo run --rm web rails db:migrate
 
 # Precompile assets
-echo "Precompiling assets..."
+echo "Precompiling assets...(This step could take several minutes to complete)"
 docker_compose_sudo run --rm web rails assets:precompile
 
 # Create first admin user
@@ -425,6 +426,8 @@ echo "Creating admin user $ADMIN_USERNAME without email service..."
 sudo docker-compose exec web tootctl accounts create $ADMIN_USERNAME --email $ADMIN_EMAIL --confirmed
 
 echo "Remember to keep the generated admin password displayed here to log in for the first time."
+sleep 8
+
 # Check if the user creation succeeded
 USER_EXISTS=$(sudo docker-compose exec web tootctl accounts modify $ADMIN_USERNAME --confirm --approve 2>&1)
 
