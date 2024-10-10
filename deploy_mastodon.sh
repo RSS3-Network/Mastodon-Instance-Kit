@@ -3,6 +3,51 @@
 # Mastodon Deployment Script
 MASTODON_VERSION="v4.2.10"
 
+
+# Function to install a package
+install_package() {
+    if command -v apt-get &> /dev/null; then
+        sudo apt-get update && sudo apt-get install -y $1
+    elif command -v yum &> /dev/null; then
+        sudo yum install -y $1
+    else
+        echo "Unsupported package manager. Please install $1 manually."
+        return 1
+    fi
+}
+
+# Check and install required tools
+for cmd in docker docker-compose curl certbot; do
+    if ! command_exists $cmd; then
+        echo "❌ $cmd is not installed. Attempting to install..."
+        case $cmd in
+            docker)
+                curl -fsSL https://get.docker.com -o get-docker.sh
+                sudo sh get-docker.sh
+                sudo systemctl start docker
+                sudo systemctl enable docker
+                ;;
+            docker-compose)
+                sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+                sudo chmod +x /usr/local/bin/docker-compose
+                ;;
+            curl)
+                install_package curl
+                ;;
+            certbot)
+                install_package certbot
+                ;;
+        esac
+        if ! command_exists $cmd; then
+            echo "❌ Failed to install $cmd. Please install it manually and run this script again."
+            exit 1
+        else
+            echo "✅ $cmd installed successfully."
+        fi
+    fi
+done
+
+
 # Function to run docker-compose commands with sudo
 docker_compose_sudo() {
     sudo docker-compose "$@"
@@ -39,6 +84,7 @@ check_dns() {
         return 1
     fi
 }
+
 
 # Main script starts here
 echo "🚀 Welcome to the Mastodon Deployment Script"
