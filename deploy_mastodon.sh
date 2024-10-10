@@ -173,6 +173,7 @@ services:
   web:
     image: tootsuite/mastodon:${MASTODON_VERSION}    
     restart: always
+    user: '1001:1001'
     env_file: .env.production
     command: bundle exec puma -C config/puma.rb
     healthcheck:
@@ -190,6 +191,7 @@ services:
   streaming:
     image: tootsuite/mastodon:${MASTODON_VERSION}    
     restart: always
+    user: '1001:1001'
     env_file: .env.production
     command: ["node", "streaming/index.js"]
     healthcheck:
@@ -204,6 +206,7 @@ services:
   sidekiq:
     image: tootsuite/mastodon:${MASTODON_VERSION}    
     restart: always
+    user: '1001:1001'
     env_file: .env.production
     environment:
       - REDIS_PASSWORD=$REDIS_PASSWORD
@@ -356,11 +359,15 @@ sudo systemctl restart nginx
 sudo mkdir -p /opt/mastodon/public/system/cache
 
 # Set ownership (adjust UID:GID if necessary)
-sudo chown -R 991:991 /opt/mastodon/public/system
+sudo chown -R 1001:1001 /opt/mastodon/public/system/cache
+sudo chown -R 1001:1001 ./public/system
 
 # Set permissions
 sudo chmod -R 755 /opt/mastodon/public/system
 sudo chmod -R 775 /opt/mastodon/public/system/cache
+
+# sudo adduser --system --group --no-create-home mastodon
+
 
 # Ensure the changes were applied successfully
 if [ $? -ne 0 ]; then
