@@ -28,40 +28,37 @@ This approach is ideal for those who want a simple solution that's operational r
   - Minimum 4GB RAM (8GB recommended)
   - At least 20GB of storage space (40GB recommended)
 - Open ports: 80 (HTTP), 443 (HTTPS), 9092 (Kafka)
-
-The deployment script will check for and attempt to install the following prerequisites if they're missing:
-* `Docker` and `Docker Compose`
-* `git`
-* `curl`
-* `certbot`
+- `Docker`, `Docker Compose`, `git`, `curl`, and `certbot` installed
   
-Note: Automatic installation requires root or sudo privileges. If you prefer to install these tools manually, please do so before running the deployment script.
-
 ### Deployment Steps
 
-1. Clone this repository:
+1. Manually install Prerequisite tools on the server
+    - `Docker`, `Docker Compose`, `git`, `curl`, and `certbot`
+
+3. Clone this repository:
 
    ```sh
-   git clone https://github.com/your-username/mastodon-plugin.git
+   git clone https://github.com/RSS3-Network/Mastodon-Instance-Kit.git
+   cd Mastodon-Instance-Kit
    ```
 
-2. Set the required environment variables:
+4. Set the required environment variables:
 
    ```sh
    export DB_PASSWORD='your_secure_db_password'
    export REDIS_PASSWORD='your_secure_redis_password'
    ```
 
-3. Run the deployment script:
+5. Run the deployment script:
 
    ```sh
    chmod +x deploy_mastodon.sh
    ./deploy_mastodon.sh
    ```
 
-4. Follow the prompts to enter your `domain name` and server's `public IP` address.
+6. Follow the prompts to enter your `domain name` and server's `public IP` address.
 
-5. After successful deployment, you'll receive:
+7. After successful deployment, you'll receive:
    - The URL of your Mastodon instance
    - Admin account credentials
 
