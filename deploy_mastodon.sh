@@ -351,6 +351,25 @@ sudo nginx -t && sudo systemctl start nginx
 # Restart Nginx server
 sudo systemctl restart nginx
 
+
+# Create necessary directories
+sudo mkdir -p /opt/mastodon/public/system/cache
+
+# Set ownership (adjust UID:GID if necessary)
+sudo chown -R 991:991 /opt/mastodon/public/system
+
+# Set permissions
+sudo chmod -R 755 /opt/mastodon/public/system
+sudo chmod -R 775 /opt/mastodon/public/system/cache
+
+# Ensure the changes were applied successfully
+if [ $? -ne 0 ]; then
+    echo "❌ Failed to set up directories and permissions. Please check your permissions and try again."
+    exit 1
+fi
+
+
+
 # Enable BuildKit for this build
 echo "Enabling BuildKit for this build..."
 export DOCKER_BUILDKIT=1
@@ -379,25 +398,6 @@ fi
 # Ensure the database is created and the user has the correct permissions
 echo "Waiting for PostgreSQL to start and be ready..."
   sleep 15
-
-
-
-# Create necessary directories
-sudo mkdir -p /opt/mastodon/public/system/cache
-
-# Set ownership (adjust UID:GID if necessary)
-sudo chown -R 991:991 /opt/mastodon/public/system
-
-# Set permissions
-sudo chmod -R 755 /opt/mastodon/public/system
-sudo chmod -R 775 /opt/mastodon/public/system/cache
-
-# Ensure the changes were applied successfully
-if [ $? -ne 0 ]; then
-    echo "❌ Failed to set up directories and permissions. Please check your permissions and try again."
-    exit 1
-fi
-
 
 # Create the 'postgres' superuser role and ensure the 'mastodon' user exists, grant necessary privileges
 sudo docker exec -it $(sudo docker-compose ps -q db) psql -U mastodon -d mastodon -c "
