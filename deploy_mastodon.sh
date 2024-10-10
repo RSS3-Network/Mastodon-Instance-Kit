@@ -146,6 +146,7 @@ version: '3'
 services:
   db:
     restart: always
+    user: '1001:1001'
     image: postgres:14-alpine
     shm_size: 256mb
     healthcheck:
@@ -160,6 +161,7 @@ services:
       - "5432:5432"
   redis:
     restart: always
+    user: '1001:1001'
     image: redis:7-alpine
     healthcheck:
       test: ['CMD', 'redis-cli', 'ping']
@@ -220,6 +222,7 @@ services:
       test: ['CMD-SHELL', "ps aux | grep '[s]idekiq\ 6' || false"]
   zookeeper:
     image: wurstmeister/zookeeper
+    user: '1001:1001'
     ports:
       - "2181:2181"
     environment:
@@ -227,6 +230,7 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
   kafka:
     image: wurstmeister/kafka
+    user: '1001:1001'
     ports:
       - "9092:9092"
     env_file:
@@ -237,6 +241,7 @@ services:
       - zookeeper
   kafka_sender:
     image: ghcr.io/frankli123/mastodon-plugin-image:latest
+    user: '1001:1001'
     restart: always
     ports:
       - '3001:3001'
@@ -362,7 +367,7 @@ sudo mkdir -p /opt/mastodon/tmp
 # Set ownership (adjust UID:GID if necessary)
 sudo chown -R 1001:1001 /opt/mastodon/public/system/cache
 sudo chown -R 1001:1001 ./public/system
-
+sudo chown -R 1001:1001 /opt/mastodon/public
 # Set permissions
 sudo chmod -R 755 /opt/mastodon/public/system
 sudo chmod -R 775 /opt/mastodon/public/system/cache
