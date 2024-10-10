@@ -23,13 +23,19 @@ This approach is ideal for those who want a simple solution that's operational r
 
 - A server with a `public IP` address
 - A `domain name` pointing to your server's IP (Ensure DNS settings are correctly configured)
-- `Docker` and `Docker Compose` installed
-- `git`, `curl`, and `certbot` installed
 - Sufficient server hardware resources:
   - At least 2 CPU cores
   - Minimum 4GB RAM (8GB recommended)
   - At least 20GB of storage space (40GB recommended)
 - Open ports: 80 (HTTP), 443 (HTTPS), 9092 (Kafka)
+
+The deployment script will check for and attempt to install the following prerequisites if they're missing:
+* `Docker` and `Docker Compose`
+* `git`
+* `curl`
+* `certbot`
+  
+Note: Automatic installation requires root or sudo privileges. If you prefer to install these tools manually, please do so before running the deployment script.
 
 ### Deployment Steps
 
