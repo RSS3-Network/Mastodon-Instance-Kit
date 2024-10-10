@@ -1,155 +1,180 @@
-# Mastodon-plugin
+# Mastodon Plugin for RSS3 Node Integration
 
-Mastodon Plugin is a backend service that handles ActivityPub events and directs them to a local Kafka Broker. It's designed for Mastodon Instance operators to easily integrate with their existing setup:
+This repository provides tools to set up a Mastodon instance for integration with RSS3 nodes. 
 
-- Run as a Docker service in your Mastodon's `docker-compose.yaml` file (pre-built image available)
-- Update Nginx configuration to forward /inbox requests to the plugin service
-- Configure necessary env variables in the `kafka_sender` section of the `docker-compose.yaml` or in the `.env.production` file
+The primary goal is to help you obtain a valid Mastodon endpoint (`mastodon_instance_external_ip:port`) for node deployment with a Mastodon worker at the [RSS3 Explorer](https://explorer.rss3.io/).
 
+## Two Options for Mastodon Setup
 
-## Usage
+1. **Automated Mastodon Deployment**: Quick setup of a new Mastodon instance.
+2. **Manual Integration**: Modify an existing Mastodon instance.
 
-### Using the Pre-built Image from Package Registry
+## Option 1: Automated Mastodon Deployment
 
-You can directly use the pre-built Docker image from the package registry in your `docker-compose.yml` file. Here's an example `docker-compose.yml`:
+For users who want to quickly set up a new Mastodon instance with RSS3 node integration.
 
+### Prerequisites
+
+- A server with a `public IP` address
+- A `domain name` pointing to your server's IP (Ensure DNS settings are correctly configured)
+- `Docker` and `Docker Compose` installed
+- `git`, `curl`, and `certbot` installed
+
+### Deployment Steps
+
+1. Clone this repository:
+
+   ```sh
+   git clone https://github.com/your-username/mastodon-plugin.git
+   ```
+
+2. Set the required environment variables:
+
+   ```sh
+   export DB_PASSWORD='your_secure_db_password'
+   export REDIS_PASSWORD='your_secure_redis_password'
+   ```
+
+3. Run the deployment script:
+
+   ```sh
+   chmod +x deploy_mastodon.sh
+   ./deploy_mastodon.sh
+   ```
+
+4. Follow the prompts to enter your `domain name` and server's `public IP` address.
+
+5. After successful deployment, you'll receive:
+   - The URL of your Mastodon instance
+   - Admin account credentials
+
+### Post-Deployment
+- Log in and change the admin password immediately.
+- Review and adjust the instance settings as needed.
+ 
+## Option 2: Manual Integration with Existing Mastodon Instance
+
+For users who already have a Mastodon instance and want to integrate it with RSS3 node.
+
+### 1. Mastodon Instance Configuration
+
+#### 1.1 Update docker-compose.yaml
+
+Add the following services to your `docker-compose.yaml`:
 
 ```yaml
+zookeeper:
+  image: wurstmeister/zookeeper
+  ports:
+    - "2181:2181"
+  environment:
+    ZOOKEEPER_CLIENT_PORT: 2181
+    ZOOKEEPER_TICK_TIME: 2000
+
+kafka:
+  image: wurstmeister/kafka
+  ports:
+    - "9092:9092"
+  env_file:
+    - .env.production
+  volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+  depends_on:
+    - zookeeper
+
 kafka_sender:
-    image: ghcr.io/frankli123/mastodon-plugin-image:latest
-    restart: always
-    ports:
-      - '3001:3001'
-    depends_on:
-      - kafka
-    environment:
-      - KAFKA_BROKER=${KAFKA_BROKER:-kafka:9092}
-      - KAFKA_TOPIC=${KAFKA_TOPIC:-activitypub_events}
+  image: ghcr.io/frankli123/mastodon-plugin-image:latest
+  restart: always
+  ports:
+    - '3001:3001'
+  depends_on:
+    - kafka
+  env_file:
+    - .env.production
 ```
 
-## Rebuilding the Docker Image (Optional)
-If you need to make changes to kafka_sender.py or the Dockerfile, you can rebuild the Docker image and push it to your own **Github package registry**.
+#### 1.2 Configure Kafka
 
+Add the following environment variables to your `.env.production` file:
 
-### Build the Docker Image:
-```shell
-docker build -t ghcr.io/{your-username}/mastodon-plugin-image:latest .
-```
-
-### Log in to GitHub Packages:
-```shell
-echo "your-github-token" | docker login ghcr.io -u your-username --password-stdin
-```
-
-Replace your-github-token with your GitHub token and your-username with your GitHub username.
-
-### Push the Docker image to the package registry:
-```shell
-docker push ghcr.io/{your-username}/mastodon-plugin-image:latest
-```
-
-
-### Push the Docker image to the package registry:
-
-```shell
-docker push ghcr.io/{your-username}/mastodon-plugin-image:latest
-```
-
-## Configuration Requirement:
-Ensure that the **KAFKA_BROKER** and **KAFKA_TOPIC** environment variables are set correctly in your `docker-compose.yml` file or through a `.env.production` file.
-You can customize the behavior of the Kafka sender by modifying kafka_sender.py.
-
-Example:
-.env.production
-```
-KAFKA_BROKER=kafka:9092
+```sh
+# Kafka settings
+KAFKA_ADVERTISED_HOST=your_mastodon_instance_ip
+KAFKA_BROKER_ID=1
 KAFKA_TOPIC=activitypub_events
+KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092
+KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://${KAFKA_ADVERTISED_HOST}:9092
+KAFKA_BROKER=kafka:9092
 ```
 
-Also, for the kafka service in your docker-compose.yaml, please include Your `Public IP` in the `KAFKA_ADVERTISED_LISTENERS`. You can also set `Kafka Broker Id` and do other Kafka configuration.
-```yaml
- kafka:
-    image: wurstmeister/kafka
-    ports:
-      - "9092:9092"
-    environment:
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://{YOUR PUBLIC IP ADDRESS}:9092
-      KAFKA_BROKER_ID: 1
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    depends_on:
-      - zookeeper
+Replace `your_mastodon_instance_ip` with your actual Mastodon instance IP.
+
+#### 1.3 Start New Services
+
+Run the following command to start the new services:
+
+```bash
+docker-compose up kafka zookeeper kafka_sender
 ```
 
-## Setting Up Nginx
-Update your Nginx configuration to forward /inbox requests to the kafka_sender service:
+Verify Kafka broker logs:
 
-/etc/nginx/sites-enabled/mastodon.conf:
+```bash
+docker-compose logs kafka
 ```
+
+#### 1.4 Update Nginx Configuration
+
+Add the following to your `/etc/nginx/sites-enabled/mastodon.conf` file:
+
+```nginx
 server {
-...
-   location /inbox {
-        proxy_pass http://127.0.0.1:3001; # Forward to the Kafka sender service
+  # ... (existing configuration)
 
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header Host $host;
-    }
-...
+  location /inbox {
+    proxy_pass http://127.0.0.1:3001;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header Host $host;
+  }
 }
 ```
 
-## Consuming Messages from Kafka
-Here’s an example of how to consume messages from the Kafka activitypub_events topic using Go:
+Restart Nginx:
 
-Pleae include your `Public IP of your Kafka broker` when you set up your Kafka consumer.
-
-The group.id is: `test-group1`
-
-Default port is: 9092
-
-main.go:
-```Go
-package main
-
-import (
-    "fmt"
-    "gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
-)
-func main() {
-    // input the public IP of your Kafka broker
-    config := &kafka.ConfigMap{"bootstrap.servers": "{Your Public IP}:9092", "group.id": "test-group1"}
-
-    consumer, err := kafka.NewConsumer(config)
-    if err != nil {
-        fmt.Printf("Failed to create consumer: %s\n", err)
-        return
-    }
-
-    defer consumer.Close()
-
-    err = consumer.Subscribe("activitypub_events", nil)
-    if err != nil {
-        fmt.Printf("Failed to subscribe to topic: %s\n", err)
-        return
-    }
-
-    for {
-        msg, err := consumer.ReadMessage(-1)
-        if err != nil {
-            fmt.Printf("Consumer error: %v (%v)\n", err, msg)
-            continue
-        }
-
-        fmt.Printf("Received message: %s\n", string(msg.Value))
-    }
-}
+```bash
+sudo systemctl restart nginx
 ```
 
 
 ## Finished
 
-You are ready to go, restart your docker service and see the result:
+Congratulations! You have successfully set up your Mastodon instance, and now have a valid Mastodon endpoint for your RSS3 node.
+
+Your Mastodon endpoint is: `mastodon_instance_external_ip:9092`
+
+### Next Steps: RSS3 Node Deployment
+
+Now that you have your Mastodon endpoint, you can proceed with the RSS3 node deployment:
+
+1. Return to the [RSS3 Explorer](https://explorer.rss3.io/).
+2. If you haven't started the node deployment process, begin it now.
+3. During the configuration step, you'll be asked to set up workers for your node.
+4. Choose to add a Mastodon worker.
+5. When prompted for a Mastodon endpoint, enter your endpoint: `your_external_ip:9092`.
+6. Complete the remaining steps as guided by the RSS3 Explorer.
+
+Note: If you've already deployed your node without the Mastodon worker, you can add it later through the node management interface on the RSS3 Explorer.
+
+### Important Notes
+
+- Ensure your firewall allows incoming connections on port 9092.
+- If you encounter any issues during the RSS3 node deployment, double-check your Mastodon endpoint and review the integration steps.
+
+## Support and Further Information
+
+- For Mastodon-related questions, refer to the [official Mastodon documentation](https://docs.joinmastodon.org/).
+- For RSS3-specific inquiries, check the [RSS3 documentation](https://docs.rss3.io/).
+- If you encounter any issues with this integration, please open an issue in this repository.
 
