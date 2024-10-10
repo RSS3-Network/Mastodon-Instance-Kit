@@ -348,6 +348,8 @@ sudo ln -s /etc/nginx/sites-available/mastodon /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl start nginx
 
 
+# Restart Nginx server
+sudo systemctl restart nginx
 
 # Enable BuildKit for this build
 echo "Enabling BuildKit for this build..."
