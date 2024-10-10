@@ -357,6 +357,7 @@ sudo systemctl restart nginx
 
 # Create necessary directories
 sudo mkdir -p /opt/mastodon/public/system/cache
+sudo mkdir -p /opt/mastodon/tmp
 
 # Set ownership (adjust UID:GID if necessary)
 sudo chown -R 1001:1001 /opt/mastodon/public/system/cache
