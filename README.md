@@ -78,7 +78,7 @@ Add the following services to your `docker-compose.yaml`:
 
 ```yaml
 zookeeper:
-  image: wurstmeister/zookeeper
+  image: bitnami/zookeeper:latest
   ports:
     - "2181:2181"
   environment:
@@ -86,13 +86,11 @@ zookeeper:
     ZOOKEEPER_TICK_TIME: 2000
 
 kafka:
-  image: wurstmeister/kafka
+  image: bitnami/kafka:latest
   ports:
     - "9092:9092"
   env_file:
     - .env.production
-  volumes:
-    - /var/run/docker.sock:/var/run/docker.sock
   depends_on:
     - zookeeper
 
