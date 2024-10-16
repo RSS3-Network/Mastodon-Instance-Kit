@@ -143,6 +143,12 @@ $DOMAIN_NAME {
                 file_server
         }
 
+        handle /.well-known/acme-challenge/* {
+                root * /opt/mastodon/public
+                file_server
+        }
+        
+
         handle /api/v1/streaming* {
                 reverse_proxy mastodon-streaming-1:4000
         }
