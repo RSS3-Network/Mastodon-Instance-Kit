@@ -35,12 +35,13 @@ read -p "Enter your domain name (e.g., mastodon.example.com): " DOMAIN_NAME
 read -p "Enter your server's public IP address: " IP_ADDRESS
 echo ""
 # Check for required environment variables
-if [ -z "$POSTGRES_PASSWORD" ] || [ -z "$REDIS_PASSWORD" ]; then
+if [ -z "$POSTGRES_PASSWORD" ] || [ -z "$REDIS_PASSWORD" ] || [-Z "$LETS_ENCRYPT_EMAIL"]; then
     echo ""
     echo "❌ Error: POSTGRES_PASSWORD and REDIS_PASSWORD must be set as environment variables."
     echo "Please set these variables before running the script. For example:"
     echo "export POSTGRES_PASSWORD='your_secure_db_password'"
     echo "export REDIS_PASSWORD='your_secure_redis_password'"
+    echo "export LETS_ENCRYPT_EMAIL='your_certificate_management_email'"
     echo "Then run this script again."
     echo ""
     exit 1
@@ -65,18 +66,25 @@ cat << EOF > .env.production
 LOCAL_DOMAIN=$DOMAIN_NAME
 SINGLE_USER_MODE=true
 ENABLE_REGISTRATIONS=false
-
+LETS_ENCRYPT_EMAIL=$LETS_ENCRYPT_EMAIL
 # Redis
 REDIS_HOST=redis
 REDIS_PORT=6379
 REDIS_PASSWORD=$REDIS_PASSWORD
-REDIS_URL=redis://:${$REDIS_PASSWORD}@redis:6379/0
+REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
 # PostgreSQL
 DB_HOST=db
 DB_PORT=5432
+DB_NAME=mastodon
+DB_USER=mastodon
+DB_PASS=$POSTGRES_PASSWORD
 POSTGRES_DB=mastodon
 POSTGRES_USER=mastodon
 POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+
+
+
+
 
 # Secrets (generated automatically)
 SECRET_KEY_BASE=$(generate_random_string 128)
@@ -116,10 +124,10 @@ cat << EOF > Caddyfile
 # file: 'Caddyfile'
 
 {
-        email {$LETS_ENCRYPT_EMAIL}
+        email $LETS_ENCRYPT_EMAIL
 }
 
-{$LOCAL_DOMAIN} {
+$DOMAIN_NAME {
         log {
                 # format single_field common_log
                 output file /logs/access.log
@@ -158,7 +166,7 @@ cat << EOF > Caddyfile
         header /system/media_attachments/files* Cache-Control "public, max-age=31536000, immutable"
 
         handle_errors {
-                @5xx expression `{http.error.status_code} >= 500 && {http.error.status_code} < 600`
+                @5xx expression {http.error.status_code} >= 500 && {http.error.status_code} < 600
                 rewrite @5xx /500.html
                 file_server
         }
@@ -177,8 +185,10 @@ services:
       test: ['CMD', 'pg_isready', '-U', 'postgres']
     volumes:
       - ./postgres14:/var/lib/postgresql/data
-    env_file:
-      - .env.production
+    environment:
+      - POSTGRES_USER=mastodon
+      - POSTGRES_PASSWORD=$DB_PASSWORD  # Postgres password
+      - POSTGRES_DB=mastodon     
     ports:
       - "5432:5432"
   redis:
@@ -188,51 +198,51 @@ services:
       test: ['CMD', 'redis-cli', 'ping']
     volumes:
       - ./redis:/data
-    command: ["redis-server", "--requirepass", "123456"]
+    environment:
+      - REDIS_PASSWORD=$REDIS_PASSWORD
+    command: ["redis-server", "--requirepass", "$REDIS_PASSWORD"]
     ports:
       - "6379:6379"
-    env_file:
-      - .env.production
   web:
-    image: tootsuite/mastodon:v4.2.10
+    image: tootsuite/mastodon:${MASTODON_VERSION}    
     restart: always
     user: '1001:1001'
-    env_file:
-      - .env.production
+    env_file: .env.production
     command: bundle exec puma -C config/puma.rb
     healthcheck:
       test: ['CMD-SHELL', 'wget -q --spider --proxy=off localhost:3000/health || exit 1']
     ports:
-      - '3000:3000'
+      - '127.0.0.1:3000:3000'
     depends_on:
       - db
       - redis
     volumes:
       - ./public/system:/opt/mastodon/public/system
-    env_file:
-      - .env.production
+    environment:
+      - REDIS_PASSWORD=$REDIS_PASSWORD
+      - REDIS_URL=redis://:$REDIS_PASSWORD@redis:6379/0
   streaming:
-    image: tootsuite/mastodon:v4.2.10
+    image: tootsuite/mastodon:${MASTODON_VERSION}    
     restart: always
     user: '1001:1001'
-    env_file:
-      - .env.production
+    env_file: .env.production
     command: ["node", "streaming/index.js"]
     healthcheck:
       test: ['CMD-SHELL', 'wget -q --spider --proxy=off localhost:4000/api/v1/streaming/health || exit 1']
     volumes:
       - ./public/system:/opt/mastodon/public/system
     ports:
-      - '4000:4000'
+      - '127.0.0.1:4000:4000'
     depends_on:
       - db
       - redis
   sidekiq:
-    image: tootsuite/mastodon:v4.2.10
+    image: tootsuite/mastodon:${MASTODON_VERSION}    
     restart: always
     user: '1001:1001'
-    env_file:
-      - .env.production
+    env_file: .env.production
+    environment:
+      - REDIS_PASSWORD=$REDIS_PASSWORD
     command: bundle exec sidekiq
     depends_on:
       - db
