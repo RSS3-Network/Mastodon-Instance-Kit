@@ -14,7 +14,7 @@ command_exists() {
 }
 
 # Check for required tools
-for cmd in docker docker-compose curl certbot; do
+for cmd in docker docker-compose curl; do
     if ! command_exists $cmd; then
         echo "❌ $cmd is not installed. Please install it and run this script again."
         exit 1
@@ -187,7 +187,7 @@ services:
       - ./postgres14:/var/lib/postgresql/data
     environment:
       - POSTGRES_USER=mastodon
-      - POSTGRES_PASSWORD=$DB_PASSWORD  # Postgres password
+      - POSTGRES_PASSWORD=$DB_PASS
       - POSTGRES_DB=mastodon     
     ports:
       - "5432:5432"
