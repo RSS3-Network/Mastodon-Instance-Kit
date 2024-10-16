@@ -96,7 +96,7 @@ kafka:
     - zookeeper
 
 kafka_sender:
-  image: ghcr.io/frankli123/mastodon-plugin-image:latest
+  image: ghcr.io/rss3-network/mastodon-instance-kit:main-04b2b41a70753d3c4a1dcde70de4ddc7abf5cd79
   restart: always
   ports:
     - '3001:3001'
