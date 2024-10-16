@@ -77,10 +77,10 @@ DB_HOST=db
 DB_PORT=5432
 DB_NAME=mastodon
 DB_USER=mastodon
-DB_PASS=$POSTGRES_PASSWORD
 POSTGRES_DB=mastodon
 POSTGRES_USER=mastodon
 POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+DB_PASS=$POSTGRES_PASSWORD
 
 
 
@@ -187,7 +187,7 @@ services:
       - ./postgres14:/var/lib/postgresql/data
     environment:
       - POSTGRES_USER=mastodon
-      - POSTGRES_PASSWORD=$DB_PASS
+      - POSTGRES_PASSWORD=$POSTGRES_PASSWORD
       - POSTGRES_DB=mastodon     
     ports:
       - "5432:5432"
