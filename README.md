@@ -58,7 +58,7 @@ This approach is ideal for those who want a simple solution that's operational r
    - The URL of your Mastodon instance
    - Admin account credentials (admin username and password)
 
-6. Ready to use your Mastodon Instance after the SSL/TLS certificates of your domains gets handled !
+6. Ready to use your Mastodon Instance after your domain is ready.
 
 ### Important Notes
 - The SSL setup process may take up to to 20 minutes to get your instance ready. Please be patient and frequently check your domain status.
