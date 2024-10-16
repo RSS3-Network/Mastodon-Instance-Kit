@@ -26,21 +26,6 @@ generate_random_string() {
     openssl rand -base64 32 | tr -d /=+ | cut -c -"$1"
 }
 
-# Function to check DNS propagation
-# This ensures that the domain name is correctly pointing to the server's IP address
-check_dns() {
-    local domain="$1"
-    local ip="$2"
-    local dns_ip=$(dig +short $domain)
-
-    if [ "$dns_ip" = "$ip" ]; then
-        return 0
-    else
-        return 1
-    fi
-}
-
-
 # Main script starts here
 echo "🚀 Welcome to the Mastodon Deployment Script"
 echo "This script will guide you through setting up a Mastodon instance."
@@ -60,6 +45,22 @@ if [ -z "$DB_PASSWORD" ] || [ -z "$REDIS_PASSWORD" ]; then
     echo ""
     exit 1
 fi
+
+# Clone Mastodon repository
+echo "Cloning Mastodon repository..."
+git clone https://github.com/mastodon/mastodon.git
+cd mastodon
+git checkout $MASTODON_VERSION
+
+# Create necessary directories
+# These directories are required for Mastodon's file storage and operation
+mkdir -p public/system
+mkdir -p public/assets
+mkdir -p public/packs
+mkdir -p tmp/pids
+mkdir -p tmp/sockets
+
+
 
 # Create .env.production file
 # This file contains essential configuration for your Mastodon instance
@@ -103,6 +104,115 @@ KAFKA_TOPIC=activitypub_events
 IP_RETENTION_PERIOD=31556952
 SESSION_RETENTION_PERIOD=31556952
 EOF
+
+
+
+
+
+
+# Create nginx.conf file with ACME support
+cat << EOF > nginx.conf
+user nginx;
+worker_processes auto;
+error_log /var/log/nginx/error.log warn;
+pid /var/run/nginx.pid;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+    log_format main '\$remote_addr - \$remote_user [\$time_local] "\$request" '
+                    '\$status \$body_bytes_sent "\$http_referer" '
+                    '"\$http_user_agent" "\$http_x_forwarded_for"';
+    access_log /var/log/nginx/access.log main;
+    sendfile on;
+    keepalive_timeout 65;
+
+    map \$http_upgrade \$connection_upgrade {
+        default upgrade;
+        ''      close;
+    }
+
+    server {
+        listen 80;
+        listen [::]:80;
+        server_name $DOMAIN_NAME;
+
+        location /.well-known/acme-challenge/ {
+            root /var/www/certbot;
+        }
+
+        location / {
+            return 301 https://\$host\$request_uri;
+        }
+    }
+
+    server {
+        listen 443 ssl http2;
+        listen [::]:443 ssl http2;
+        server_name $DOMAIN_NAME;
+
+        ssl_certificate /etc/nginx/ssl/live/$DOMAIN_NAME/fullchain.pem;
+        ssl_certificate_key /etc/nginx/ssl/live/$DOMAIN_NAME/privkey.pem;
+
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_ciphers 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384';
+        ssl_prefer_server_ciphers off;
+        ssl_session_cache shared:SSL:10m;
+        ssl_session_timeout 1d;
+        ssl_session_tickets off;
+
+        # ... (rest of your Nginx configuration)
+
+        location / {
+            try_files \$uri @proxy;
+        }
+
+        location @proxy {
+            proxy_set_header Host \$host;
+            proxy_set_header X-Real-IP \$remote_addr;
+            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto \$scheme;
+            proxy_pass http://web:3000;
+            proxy_buffering off;
+            proxy_redirect off;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade \$http_upgrade;
+            proxy_set_header Connection \$connection_upgrade;
+        }
+
+        location /api/v1/streaming {
+            proxy_pass http://streaming:4000;
+            proxy_set_header Host \$host;
+            proxy_set_header X-Real-IP \$remote_addr;
+            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto \$scheme;
+            proxy_buffering off;
+            proxy_redirect off;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade \$http_upgrade;
+            proxy_set_header Connection \$connection_upgrade;
+        }
+
+        location /inbox {
+            proxy_pass http://kafka_sender:3001;
+            proxy_set_header X-Real-IP \$remote_addr;
+            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+            proxy_set_header Host \$host;
+        }
+    }
+}
+EOF
+
+# Create necessary directories
+mkdir -p ./certbot/www
+mkdir -p ./certbot/conf
+
+
+
 
 
 # Create docker-compose.yml file
@@ -184,24 +294,25 @@ services:
     healthcheck:
       test: ['CMD-SHELL', "ps aux | grep '[s]idekiq\ 6' || false"]
   zookeeper:
-    image: wurstmeister/zookeeper
+    image: bitnami/zookeeper:latest
     ports:
       - "2181:2181"
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+      ZOO_ENABLE_AUTH: true
+
   kafka:
-    image: wurstmeister/kafka
+    image: bitnami/kafka:latest
     ports:
       - "9092:9092"
     env_file:
       - .env.production
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       - zookeeper
+
   kafka_sender:
-    image: ghcr.io/frankli123/mastodon-plugin-image:latest
+    image: ghcr.io/rss3-network/mastodon-instance-kit:main-04b2b41a70753d3c4a1dcde70de4ddc7abf5cd79
     restart: always
     ports:
       - '3001:3001'
@@ -217,6 +328,8 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ./public/system:/opt/mastodon/public/system
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/nginx/ssl
     depends_on:
       - web
       - streaming
