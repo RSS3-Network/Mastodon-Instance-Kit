@@ -84,6 +84,7 @@ zookeeper:
   environment:
     ZOOKEEPER_CLIENT_PORT: 2181
     ZOOKEEPER_TICK_TIME: 2000
+    ZOO_ENABLE_AUTH: true
 
 kafka:
   image: bitnami/kafka:latest
