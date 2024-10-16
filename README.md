@@ -12,8 +12,7 @@ Both options will guide you through the initial setup. Once completed, you'll ob
 ## Option 1: Automated Mastodon Instance Deployment
 
 For users who want to quickly set up a new Mastodon instance with RSS3 node integration. It provides:
-- A straightforward setup process for a complete, ready-to-use Mastodon instance
-- Automatic configuration for RSS3 node integration
+- A straightforward setup process for a ready-to-use Mastodon instance
 - Pre-configured relay services, allowing your instance to receive messages from major Mastodon instances
 
 This approach is ideal for those who want a simple solution that's operational right after deployment, with built-in connectivity to the wider Mastodon network.
