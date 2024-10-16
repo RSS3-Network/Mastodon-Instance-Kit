@@ -12,59 +12,61 @@ Both options will guide you through the initial setup. Once completed, you'll ob
 ## Option 1: Automated Mastodon Instance Deployment
 
 For users who want to quickly set up a new Mastodon instance with RSS3 node integration. It provides:
-- A streamlined setup process for a complete, ready-to-use Mastodon instance
+- A straightforward setup process for a complete, ready-to-use Mastodon instance
 - Automatic configuration for RSS3 node integration
 - Pre-configured relay services, allowing your instance to receive messages from major Mastodon instances
-- Immediate functionality upon completion, with no additional setup required
 
 This approach is ideal for those who want a simple solution that's operational right after deployment, with built-in connectivity to the wider Mastodon network.
 
 ### Prerequisites
 
 - A server with a `public IP` address
-- A `domain name` pointing to your server's IP (Ensure DNS settings are correctly configured)
+- A `domain name` pointing to your server's IP
 - Sufficient server hardware resources:
   - At least 2 CPU cores
   - Minimum 4GB RAM (8GB recommended)
   - At least 20GB of storage space (40GB recommended)
 - Open ports: 80 (HTTP), 443 (HTTPS), 9092 (Kafka)
-- `Docker`, `Docker Compose`, `git`, `curl`, `dnsutils`, `nginx` and `certbot` installed
   
 ### Deployment Steps
 
-1. Manually install Prerequisite tools on the server
-    - `Docker`, `Docker Compose`, `git`, `curl`, `dnsutils`, `nginx` and `certbot`
-
-3. Clone this repository:
+1. Clone this repository:
 
    ```sh
    git clone https://github.com/RSS3-Network/Mastodon-Instance-Kit.git
    cd Mastodon-Instance-Kit
    ```
 
-4. Set the required environment variables:
+2. Set the required environment variables:
 
    ```sh
    export DB_PASSWORD='your_secure_db_password'
    export REDIS_PASSWORD='your_secure_redis_password'
+   export LETS_ENCRYPT_EMAIL='your_domain_certificate_management_email'
    ```
 
-5. Run the deployment script:
+3. Run the deployment script:
 
    ```sh
    chmod +x deploy_mastodon.sh
    ./deploy_mastodon.sh
    ```
 
-6. Follow the prompts to enter your `domain name` and server's `public IP` address.
+4. Follow the prompts to enter any required information.
 
-7. After successful deployment, you'll receive:
+5. After successful deployment, you'll receive:
    - The URL of your Mastodon instance
-   - Admin account credentials
+   - Admin account credentials (admin username and password)
 
-### Post-Deployment
-- Log in and change the admin password immediately.
+6. Ready to use your Mastodon Instance after the SSL/TLS certificates of your domains gets handled !
+
+### Important Notes
+- The SSL setup process may take up to to 20 minutes to get your instance ready. Please be patient and frequently check your domain status.
+- The admin account is created automatically for your convenience, but it's crucial to change the password upon first login.
 - Review and adjust the instance settings as needed.
+- The deployment uses multiple Docker services. If you need to troubleshoot, you can check logs for specific services using:
+  ```sh
+  docker-compose logs [service_name]
  
 ## Option 2: Manual Mastodon Instance Modification
 
