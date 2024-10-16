@@ -363,11 +363,9 @@ END
 # Run database migrations
 echo "Running database migrations..."
 docker_compose_sudo run --rm web rails db:migrate
-
-## Precompile assets
-echo "Precompiling assets...(This step could take several minutes to complete)"
-# docker_compose_sudo run --rm web rails assets:precompile
-
+docker_compose_sudo run --rm web rails db:seed
+docker_compose_sudo down
+docker_compose_sudo up -d
 
 
 # Create first default admin user
