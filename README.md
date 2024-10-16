@@ -1,6 +1,6 @@
 # Mastodon Instance Kit for RSS3 Node Integration
 
-This repository provides tools to help you obtain a valid Mastodon endpoint (`mastodon_instance_external_ip:port`) for node deployment with a Mastodon worker at the [RSS3 Explorer](https://explorer.rss3.io/).
+This repository provides tools to help you obtain a valid Mastodon endpoint for node deployment with a Mastodon worker at the [RSS3 Explorer](https://explorer.rss3.io/).
 
 ## Two Options to Obtain Valid Mastodon Endpoints
 
@@ -144,7 +144,9 @@ After making these adjustments, restart Nginx to apply the changes.
 
 Congratulations! You now have a valid Mastodon endpoint for your RSS3 node.
 
-Your Mastodon endpoint is: `mastodon_instance_external_ip:9092`
+Your Mastodon endpoint is: `instance_external_ip:9092`
+
+
 
 ### Next Steps: RSS3 Node Deployment
 
