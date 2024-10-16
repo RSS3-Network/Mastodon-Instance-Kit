@@ -133,26 +133,9 @@ docker-compose up kafka zookeeper kafka_sender
 
 #### 1.4 Update Nginx Configuration
 
-Add the following to your `/etc/nginx/sites-enabled/mastodon.conf` file:
+Make sure your Proxy Server setup forwards requests from `/inbox` to the service running on `localhost` at port `3001`.
 
-```nginx
-server {
-  # ... (existing configuration)
-
-  location /inbox {
-    proxy_pass http://127.0.0.1:3001;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header Host $host;
-  }
-}
-```
-
-Restart Nginx:
-
-```bash
-sudo systemctl restart nginx
-```
+After making these adjustments, restart Nginx to apply the changes.
 
 
 ## Finished
