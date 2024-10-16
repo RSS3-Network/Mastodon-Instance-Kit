@@ -29,15 +29,19 @@ This approach is ideal for those who want a simple solution that's operational r
 - Open ports: 80 (HTTP), 443 (HTTPS), 9092 (Kafka)
   
 ### Deployment Steps
+1. Configure domain's DNS settings:
 
-1. Clone this repository:
+Set up an A record for your domain (e.g., `mastodon.yourdomain.com`) pointing to your server's public IP address.
+
+
+2. Clone this repository:
 
    ```sh
    git clone https://github.com/RSS3-Network/Mastodon-Instance-Kit.git
    cd Mastodon-Instance-Kit
    ```
 
-2. Set the required environment variables:
+3. Set the required environment variables:
 
    ```sh
    export DB_PASSWORD='your_secure_db_password'
@@ -45,23 +49,23 @@ This approach is ideal for those who want a simple solution that's operational r
    export LETS_ENCRYPT_EMAIL='your_domain_certificate_management_email'
    ```
 
-3. Run the deployment script:
+4. Run the deployment script:
 
    ```sh
    chmod +x deploy_mastodon.sh
    ./deploy_mastodon.sh
    ```
 
-4. Follow the prompts to enter any required information.
+5. Follow the prompts to enter any required information.
 
-5. After successful deployment, you'll receive:
+6. After successful deployment, you'll receive:
    - The URL of your Mastodon instance
    - Admin account credentials (admin username and password)
 
-6. Ready to use your Mastodon Instance after your domain is ready.
+7. Wait for your instance to be ready
 
 ### Important Notes
-- The SSL setup process may take up to to 20 minutes to get your instance ready. Please be patient and frequently check your domain status.
+- The SSL setup process may take up to to a few minutes. Please be patient and frequently check your domain status.
 - The admin account is created automatically for your convenience, but it's crucial to change the password upon first login.
 - Review and adjust the instance settings as needed.
 - The deployment uses multiple Docker services. If you need to troubleshoot, you can check logs for specific services using:
