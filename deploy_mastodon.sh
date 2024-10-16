@@ -322,11 +322,12 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-
 # Ensure the database is created and the user has the correct permissions
-echo "Waiting for PostgreSQL to start and be ready..."
-  sleep 15
+echo "Waiting for Docker services like PostgreSQL to start and be ready..."
+  sleep 10
 
+echo "Proxy server Caddy may take a few minutes to complete automatic SSL certificate provisioning"
+echo "During this time, the Mastodon web interface may not be immediately accessible."
 
 # Create the 'postgres' superuser role and ensure the 'mastodon' user exists, grant necessary privileges
 sudo docker exec -it $(sudo docker-compose ps -q db) psql -U mastodon -d mastodon -c "
@@ -353,7 +354,6 @@ END
 \$\$;
 "
 
-
 # Run database migrations
 echo "Running database migrations..."
 docker_compose_sudo run --rm web rails db:migrate
@@ -362,21 +362,24 @@ docker_compose_sudo run --rm web rails db:migrate
 echo "Precompiling assets...(This step could take several minutes to complete)"
 # docker_compose_sudo run --rm web rails assets:precompile
 
+
+
 # Create first default admin user
-ADMIN_EMAIL="superadmin@$DOMAIN_NAME"
+ADMIN_EMAIL=$LETS_ENCRYPT_EMAIL
 ADMIN_USERNAME="superadmin"
 ROLE="Admin"
 
-# Before creating the admin user, check if it already exists
+
+echo "We'll create an admin account for you while waiting for the SSL setup."
 # Create the admin user without email confirmation
   echo "Creating admin user $ADMIN_USERNAME without email service..."
+  echo "   Username: $ADMIN_USERNAME"
+  echo "   Email: $ADMIN_EMAIL"
   sudo docker-compose exec web tootctl accounts create $ADMIN_USERNAME --email $ADMIN_EMAIL --confirmed
 
-  echo "Remember to keep the generated admin password displayed here to log in for the first time."
+  echo "✅ Admin user created successfully."
+  echo "⚠️ IMPORTANT: The password for this account will be displayed shortly. Make sure to save it securely!"
   sleep 5
-
-  # Check if the user creation succeeded
-  #USER_EXISTS=$(sudo docker-compose exec web tootctl accounts modify $ADMIN_USERNAME --confirm --approve 2>&1)
 
   echo "Admin user $ADMIN_USERNAME created successfully."
 
@@ -434,14 +437,22 @@ echo "Relay services have been successfully added!"
 
 # Final messages
 echo ""
+echo "🎉 Setup Complete! 🎉"
 echo "✅ Mastodon deployment completed successfully!"
-echo "🌐 Your Mastodon instance is now available at https://$DOMAIN_NAME"
+echo "🌐 Your Mastodon instance will be available at https://$DOMAIN_NAME"
+echo "🕒 Waiting for Caddy to finish SSL setup (this may take up to 10 minutes)..."
+echo "Then you can restart your Docker services to run your Mastodon Instance"
+echo "If you encounter any issues accessing the site, please check the Caddy logs:
+   docker-compose logs caddy"
+echo ""
 echo "👤 An admin user has been created with the following credentials:"
+echo "🔑 Admin Account Details:"
 echo "   Username: $ADMIN_USERNAME"
 echo "   Email: $ADMIN_EMAIL"
+echo "   Password was generated earlier. Please go back and check."
 echo "⚠️ Please log in and change the generated admin password!"
 echo ""
-echo "🔌 Please use '$IP_ADDRESS:9092' as the Mastodon endpoint to complete the RSS3 Node deployment with a Mastodon worker at https://explorer.rss3.io/"
+echo "🔌 When your server is ready to use, please use '$IP_ADDRESS:9092' as the Mastodon endpoint to complete the RSS3 Node deployment with a Mastodon worker at https://explorer.rss3.io/"
 echo "📡 Your instance will receive messages from major Mastodon instances due to the configured relay server subscriptions."
 echo "📚 For more information on managing your Mastodon instance, visit: https://docs.joinmastodon.org/"
 
