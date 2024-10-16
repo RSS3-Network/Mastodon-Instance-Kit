@@ -35,11 +35,11 @@ read -p "Enter your domain name (e.g., mastodon.example.com): " DOMAIN_NAME
 read -p "Enter your server's public IP address: " IP_ADDRESS
 echo ""
 # Check for required environment variables
-if [ -z "$DB_PASSWORD" ] || [ -z "$REDIS_PASSWORD" ]; then
+if [ -z "$POSTGRES_PASSWORD" ] || [ -z "$REDIS_PASSWORD" ]; then
     echo ""
-    echo "❌ Error: DB_PASSWORD and REDIS_PASSWORD must be set as environment variables."
+    echo "❌ Error: POSTGRES_PASSWORD and REDIS_PASSWORD must be set as environment variables."
     echo "Please set these variables before running the script. For example:"
-    echo "export DB_PASSWORD='your_secure_db_password'"
+    echo "export POSTGRES_PASSWORD='your_secure_db_password'"
     echo "export REDIS_PASSWORD='your_secure_redis_password'"
     echo "Then run this script again."
     echo ""
@@ -53,17 +53,13 @@ cd mastodon
 git checkout $MASTODON_VERSION
 
 # Create necessary directories
-# These directories are required for Mastodon's file storage and operation
 mkdir -p public/system
 mkdir -p public/assets
 mkdir -p public/packs
 mkdir -p tmp/pids
 mkdir -p tmp/sockets
 
-
-
 # Create .env.production file
-# This file contains essential configuration for your Mastodon instance
 cat << EOF > .env.production
 # Federation
 LOCAL_DOMAIN=$DOMAIN_NAME
@@ -74,13 +70,13 @@ ENABLE_REGISTRATIONS=false
 REDIS_HOST=redis
 REDIS_PORT=6379
 REDIS_PASSWORD=$REDIS_PASSWORD
-
+REDIS_URL=redis://:${$REDIS_PASSWORD}@redis:6379/0
 # PostgreSQL
 DB_HOST=db
 DB_PORT=5432
-DB_NAME=mastodon
-DB_USER=mastodon
-DB_PASS=$DB_PASSWORD
+POSTGRES_DB=mastodon
+POSTGRES_USER=mastodon
+POSTGRES_PASSWORD=$POSTGRES_PASSWORD
 
 # Secrets (generated automatically)
 SECRET_KEY_BASE=$(generate_random_string 128)
@@ -100,6 +96,11 @@ KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://${IP_ADDRESS}:9092
 KAFKA_BROKER=kafka:9092
 KAFKA_TOPIC=activitypub_events
 
+ZOOKEEPER_CLIENT_PORT=2181
+ZOOKEEPER_TICK_TIME=2000
+ZOO_ENABLE_AUTH=true
+
+
 # IP and session retention
 IP_RETENTION_PERIOD=31556952
 SESSION_RETENTION_PERIOD=31556952
@@ -110,110 +111,59 @@ EOF
 
 
 
-# Create nginx.conf file with ACME support
-cat << EOF > nginx.conf
-user nginx;
-worker_processes auto;
-error_log /var/log/nginx/error.log warn;
-pid /var/run/nginx.pid;
+# Create Caddyfile file with ACME support
+cat << EOF > Caddyfile
+# file: 'Caddyfile'
 
-events {
-    worker_connections 1024;
+{
+        email {$LETS_ENCRYPT_EMAIL}
 }
 
-http {
-    include /etc/nginx/mime.types;
-    default_type application/octet-stream;
-    log_format main '\$remote_addr - \$remote_user [\$time_local] "\$request" '
-                    '\$status \$body_bytes_sent "\$http_referer" '
-                    '"\$http_user_agent" "\$http_x_forwarded_for"';
-    access_log /var/log/nginx/access.log main;
-    sendfile on;
-    keepalive_timeout 65;
-
-    map \$http_upgrade \$connection_upgrade {
-        default upgrade;
-        ''      close;
-    }
-
-    server {
-        listen 80;
-        listen [::]:80;
-        server_name $DOMAIN_NAME;
-
-        location /.well-known/acme-challenge/ {
-            root /var/www/certbot;
+{$LOCAL_DOMAIN} {
+        log {
+                # format single_field common_log
+                output file /logs/access.log
         }
 
-        location / {
-            return 301 https://\$host\$request_uri;
-        }
-    }
+        root * /opt/mastodon/public
 
-    server {
-        listen 443 ssl http2;
-        listen [::]:443 ssl http2;
-        server_name $DOMAIN_NAME;
+        encode gzip
 
-        ssl_certificate /etc/nginx/ssl/live/$DOMAIN_NAME/fullchain.pem;
-        ssl_certificate_key /etc/nginx/ssl/live/$DOMAIN_NAME/privkey.pem;
+        @static file
 
-        ssl_protocols TLSv1.2 TLSv1.3;
-        ssl_ciphers 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384';
-        ssl_prefer_server_ciphers off;
-        ssl_session_cache shared:SSL:10m;
-        ssl_session_timeout 1d;
-        ssl_session_tickets off;
-
-        # ... (rest of your Nginx configuration)
-
-        location / {
-            try_files \$uri @proxy;
+        handle @static {
+                file_server
         }
 
-        location @proxy {
-            proxy_set_header Host \$host;
-            proxy_set_header X-Real-IP \$remote_addr;
-            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto \$scheme;
-            proxy_pass http://web:3000;
-            proxy_buffering off;
-            proxy_redirect off;
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade \$http_upgrade;
-            proxy_set_header Connection \$connection_upgrade;
+        handle /api/v1/streaming* {
+                reverse_proxy mastodon-streaming-1:4000
         }
 
-        location /api/v1/streaming {
-            proxy_pass http://streaming:4000;
-            proxy_set_header Host \$host;
-            proxy_set_header X-Real-IP \$remote_addr;
-            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto \$scheme;
-            proxy_buffering off;
-            proxy_redirect off;
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade \$http_upgrade;
-            proxy_set_header Connection \$connection_upgrade;
+        handle {
+                reverse_proxy mastodon-web-1:3000
         }
 
-        location /inbox {
-            proxy_pass http://kafka_sender:3001;
-            proxy_set_header X-Real-IP \$remote_addr;
-            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-            proxy_set_header Host \$host;
+        header {
+                Strict-Transport-Security "max-age=31536000;"
         }
-    }
+
+        handle /inbox* {
+                reverse_proxy mastodon-kafka_sender-1:3001
+        }
+
+        header /sw.js  Cache-Control "public, max-age=0";
+        header /emoji* Cache-Control "public, max-age=31536000, immutable"
+        header /packs* Cache-Control "public, max-age=31536000, immutable"
+        header /system/accounts/avatars* Cache-Control "public, max-age=31536000, immutable"
+        header /system/media_attachments/files* Cache-Control "public, max-age=31536000, immutable"
+
+        handle_errors {
+                @5xx expression `{http.error.status_code} >= 500 && {http.error.status_code} < 600`
+                rewrite @5xx /500.html
+                file_server
+        }
 }
 EOF
-
-# Create necessary directories
-mkdir -p ./certbot/www
-mkdir -p ./certbot/conf
-
-
-
-
 
 # Create docker-compose.yml file
 cat << EOF > docker-compose.yml
@@ -227,10 +177,8 @@ services:
       test: ['CMD', 'pg_isready', '-U', 'postgres']
     volumes:
       - ./postgres14:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_USER=mastodon
-      - POSTGRES_PASSWORD=$DB_PASSWORD  # Postgres password
-      - POSTGRES_DB=mastodon
+    env_file:
+      - .env.production
     ports:
       - "5432:5432"
   redis:
@@ -240,51 +188,51 @@ services:
       test: ['CMD', 'redis-cli', 'ping']
     volumes:
       - ./redis:/data
-    environment:
-      - REDIS_PASSWORD=$REDIS_PASSWORD
-    command: ["redis-server", "--requirepass", "$REDIS_PASSWORD"]
+    command: ["redis-server", "--requirepass", "123456"]
     ports:
       - "6379:6379"
+    env_file:
+      - .env.production
   web:
-    image: tootsuite/mastodon:${MASTODON_VERSION}
+    image: tootsuite/mastodon:v4.2.10
     restart: always
     user: '1001:1001'
-    env_file: .env.production
+    env_file:
+      - .env.production
     command: bundle exec puma -C config/puma.rb
     healthcheck:
       test: ['CMD-SHELL', 'wget -q --spider --proxy=off localhost:3000/health || exit 1']
     ports:
-      - '127.0.0.1:3000:3000'
+      - '3000:3000'
     depends_on:
       - db
       - redis
     volumes:
       - ./public/system:/opt/mastodon/public/system
-    environment:
-      - REDIS_PASSWORD=$REDIS_PASSWORD
-      - REDIS_URL=redis://:$REDIS_PASSWORD@redis:6379/0
+    env_file:
+      - .env.production
   streaming:
-    image: tootsuite/mastodon:${MASTODON_VERSION}
+    image: tootsuite/mastodon:v4.2.10
     restart: always
     user: '1001:1001'
-    env_file: .env.production
+    env_file:
+      - .env.production
     command: ["node", "streaming/index.js"]
     healthcheck:
       test: ['CMD-SHELL', 'wget -q --spider --proxy=off localhost:4000/api/v1/streaming/health || exit 1']
     volumes:
       - ./public/system:/opt/mastodon/public/system
     ports:
-      - '127.0.0.1:4000:4000'
+      - '4000:4000'
     depends_on:
       - db
       - redis
   sidekiq:
-    image: tootsuite/mastodon:${MASTODON_VERSION}
+    image: tootsuite/mastodon:v4.2.10
     restart: always
     user: '1001:1001'
-    env_file: .env.production
-    environment:
-      - REDIS_PASSWORD=$REDIS_PASSWORD
+    env_file:
+      - .env.production
     command: bundle exec sidekiq
     depends_on:
       - db
@@ -297,10 +245,8 @@ services:
     image: bitnami/zookeeper:latest
     ports:
       - "2181:2181"
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-      ZOO_ENABLE_AUTH: true
+    env_file:
+      - .env.production
 
   kafka:
     image: bitnami/kafka:latest
@@ -320,29 +266,20 @@ services:
       - kafka
     env_file:
       - .env.production
-  nginx:
-    image: nginx:latest
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: always
     ports:
-      - "80:80"
-      - "443:443"
+      - 80:80
+      - 443:443
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./public/system:/opt/mastodon/public/system
-      - ./certbot/www:/var/www/certbot
-      - ./certbot/conf:/etc/nginx/ssl
-    depends_on:
-      - web
-      - streaming
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy/config:/config
+      - ./caddy/data:/data
+    env_file:
+      - .env.production
 EOF
-
-#
-#sudo ln -s /etc/nginx/sites-available/mastodon /etc/nginx/sites-enabled/
-#sudo nginx -t && sudo systemctl start nginx
-#
-#
-## Restart Nginx server
-#sudo systemctl restart nginx
-
 
 # Create necessary directories
 sudo mkdir -p /opt/mastodon/public/system/cache
@@ -367,24 +304,6 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-
-#
-## Enable BuildKit for this build
-#echo "Enabling BuildKit for this build..."
-#export DOCKER_BUILDKIT=1
-#export COMPOSE_DOCKER_CLI_BUILD=1
-#
-## Enable BuildKit in Docker daemon
-#echo "Enabling BuildKit in Docker daemon..."
-#sudo bash -c ' cat <<EOF > /etc/docker/daemon.json
-#{
-#  "features": {
-#    "buildkit": true
-#  }
-#}
-#EOF'
-
-
 # Start Docker containers
 echo "Starting Docker containers..."
 docker_compose_sudo up -d
@@ -397,31 +316,33 @@ fi
 # Ensure the database is created and the user has the correct permissions
 echo "Waiting for PostgreSQL to start and be ready..."
   sleep 15
-#
-## Create the 'postgres' superuser role and ensure the 'mastodon' user exists, grant necessary privileges
-#sudo docker exec -it $(sudo docker-compose ps -q db) psql -U mastodon -d mastodon -c "
-#DO \$\$
-#BEGIN
-#    -- Create 'postgres' role if it doesn't exist
-#    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'postgres') THEN
-#        CREATE ROLE postgres WITH SUPERUSER CREATEDB CREATEROLE LOGIN PASSWORD '$DB_PASSWORD';
-#    END IF;
-#
-#    -- Ensure 'mastodon' role exists (it should be already created by docker-compose)
-#    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'mastodon') THEN
-#        CREATE ROLE mastodon WITH LOGIN PASSWORD '$DB_PASSWORD';
-#    END IF;
-#
-#    -- Ensure the 'mastodon' database exists
-#    IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'mastodon') THEN
-#        CREATE DATABASE mastodon OWNER mastodon;
-#    END IF;
-#
-#    -- Grant all privileges on the database 'mastodon' to the 'mastodon' user
-#    GRANT ALL PRIVILEGES ON DATABASE mastodon TO mastodon;
-#END
-#\$\$;
-#"
+
+
+# Create the 'postgres' superuser role and ensure the 'mastodon' user exists, grant necessary privileges
+sudo docker exec -it $(sudo docker-compose ps -q db) psql -U mastodon -d mastodon -c "
+DO \$\$
+BEGIN
+    -- Create 'postgres' role if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'postgres') THEN
+        CREATE ROLE postgres WITH SUPERUSER CREATEDB CREATEROLE LOGIN PASSWORD '$POSTGRES_PASSWORD';
+    END IF;
+
+    -- Ensure 'mastodon' role exists (it should be already created by docker-compose)
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'mastodon') THEN
+        CREATE ROLE mastodon WITH LOGIN PASSWORD '$POSTGRES_PASSWORD';
+    END IF;
+
+    -- Ensure the 'mastodon' database exists
+    IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'mastodon') THEN
+        CREATE DATABASE mastodon OWNER mastodon;
+    END IF;
+
+    -- Grant all privileges on the database 'mastodon' to the 'mastodon' user
+    GRANT ALL PRIVILEGES ON DATABASE mastodon TO mastodon;
+END
+\$\$;
+"
+
 
 # Run database migrations
 echo "Running database migrations..."
@@ -431,51 +352,38 @@ docker_compose_sudo run --rm web rails db:migrate
 echo "Precompiling assets...(This step could take several minutes to complete)"
 # docker_compose_sudo run --rm web rails assets:precompile
 
-## Create first admin user
-#ADMIN_EMAIL="superadmin@$DOMAIN_NAME"  # Use a valid-formatted but non-functional email
-#ADMIN_USERNAME="superadmin"
-#ROLE="Admin"
+# Create first default admin user
+ADMIN_EMAIL="superadmin@$DOMAIN_NAME"
+ADMIN_USERNAME="superadmin"
+ROLE="Admin"
 
-## Before creating the admin user, check if it already exists
-## ADMIN_EXISTS=$(sudo docker-compose exec web tootctl accounts show $ADMIN_USERNAME 2>&1)
-## if [[ "$ADMIN_EXISTS" != *"No user with such username"* ]]; then
-##    echo "Admin user $ADMIN_USERNAME already exists. Skipping creation."
-## else
-## Create the admin user without email confirmation
-#  echo "Creating admin user $ADMIN_USERNAME without email service..."
-#  sudo docker-compose exec web tootctl accounts create $ADMIN_USERNAME --email $ADMIN_EMAIL --confirmed
-#
-#  echo "Remember to keep the generated admin password displayed here to log in for the first time."
-#  sleep 5
+# Before creating the admin user, check if it already exists
+# Create the admin user without email confirmation
+  echo "Creating admin user $ADMIN_USERNAME without email service..."
+  sudo docker-compose exec web tootctl accounts create $ADMIN_USERNAME --email $ADMIN_EMAIL --confirmed
+
+  echo "Remember to keep the generated admin password displayed here to log in for the first time."
+  sleep 5
 
   # Check if the user creation succeeded
   #USER_EXISTS=$(sudo docker-compose exec web tootctl accounts modify $ADMIN_USERNAME --confirm --approve 2>&1)
-#
-#  #if [[ "$USER_EXISTS" == *"No user with such username"* ]]; then
-#   #   echo "Error: Failed to create the admin user $ADMIN_USERNAME. Please check the logs for details."
-#    #  exit 1
-# # else
-#      echo "Admin user $ADMIN_USERNAME created successfully."
-#
-#      # Assign the Admin role to the user
-#      echo "Assigning the $ROLE role to $ADMIN_USERNAME..."
-#      sudo docker-compose exec web tootctl accounts modify $ADMIN_USERNAME --role $ROLE
-#
-#      # Disable 2FA and skip sign-in token (since there's no email service)
-#      echo "Disabling 2FA and skipping sign-in token for $ADMIN_USERNAME..."
-#      sudo docker-compose exec web tootctl accounts modify $ADMIN_USERNAME --disable-2fa
-#
-#      echo "Admin user $ADMIN_USERNAME has been successfully created and assigned the $ROLE role!"
-#
-# # fi
-## fi
+
+  echo "Admin user $ADMIN_USERNAME created successfully."
+
+  # Assign the Admin role to the user
+  echo "Assigning the $ROLE role to $ADMIN_USERNAME..."
+  sudo docker-compose exec web tootctl accounts modify $ADMIN_USERNAME --role $ROLE
+
+  # Disable 2FA and skip sign-in token (since there's no email service)
+  echo "Disabling 2FA and skipping sign-in token for $ADMIN_USERNAME..."
+  sudo docker-compose exec web tootctl accounts modify $ADMIN_USERNAME --disable-2fa
+
+  echo "Admin user $ADMIN_USERNAME has been successfully created and assigned the $ROLE role!"
 
 
 ## Approve the admin account
-#echo "Approving admin account..."
-#sudo docker-compose exec -T web bin/tootctl accounts approve $ADMIN_USERNAME
-
-
+echo "Approving admin account..."
+sudo docker-compose exec -T web bin/tootctl accounts approve $ADMIN_USERNAME
 
 # Add relay services to the mastodon instance for receiving mastodon data
 echo "Adding relay services directly to the database..."
@@ -511,16 +419,18 @@ sudo docker-compose exec db psql -U mastodon -d mastodon -c "$SQL_COMMANDS"
 # Verify that the relays were added successfully
 VERIFY_SQL="SELECT * FROM relays LIMIT 10;"
 sudo docker-compose exec db psql -U mastodon -d mastodon -c "$VERIFY_SQL"
-
 echo "Relay services have been successfully added!"
 
+
 # Final messages
+echo ""
 echo "✅ Mastodon deployment completed successfully!"
 echo "🌐 Your Mastodon instance is now available at https://$DOMAIN_NAME"
-#echo "👤 An admin user has been created with the following credentials:"
-#echo "   Username: $ADMIN_USERNAME"
-#echo "   Email: $ADMIN_EMAIL"
-#echo "⚠️ Please log in and change the generated admin password!"
+echo "👤 An admin user has been created with the following credentials:"
+echo "   Username: $ADMIN_USERNAME"
+echo "   Email: $ADMIN_EMAIL"
+echo "⚠️ Please log in and change the generated admin password!"
+echo ""
 echo "🔌 Please use '$IP_ADDRESS:9092' as the Mastodon endpoint to complete the RSS3 Node deployment with a Mastodon worker at https://explorer.rss3.io/"
 echo "📡 Your instance will receive messages from major Mastodon instances due to the configured relay server subscriptions."
 echo "📚 For more information on managing your Mastodon instance, visit: https://docs.joinmastodon.org/"
