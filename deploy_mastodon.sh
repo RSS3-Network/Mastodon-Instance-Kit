@@ -324,7 +324,7 @@ fi
 
 # Ensure the database is created and the user has the correct permissions
 echo "Waiting for Docker services like PostgreSQL to start and be ready..."
-  sleep 10
+  sleep 30
 
 echo "Proxy server Caddy may take a few minutes to complete automatic SSL certificate provisioning"
 echo "During this time, the Mastodon web interface may not be immediately accessible."
