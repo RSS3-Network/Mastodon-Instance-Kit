@@ -19,7 +19,7 @@ Both options will guide you through the initial setup. Once completed, you'll ob
 
 For users who want to quickly set up a new Mastodon instance with RSS3 node integration. It provides:
 - A straightforward setup process for a ready-to-use Mastodon instance
-- Pre-configured relay services, allowing your instance to receive messages from major Mastodon instances
+- Pre-configured services, allowing your instance to receive messages from fediverse
 
 This approach is ideal for those who want a simple solution that's operational right after deployment, with built-in connectivity to the wider Mastodon network.
 
@@ -54,7 +54,7 @@ Set up an A record for your domain (e.g., `mastodon.yourdomain.com`) pointing to
    ```sh
    export POSTGRES_PASSWORD='your_secure_db_password'
    export REDIS_PASSWORD='your_secure_redis_password'
-   LETS_ENCRYPT_EMAIL='your_certificate_management_email'
+   export LETS_ENCRYPT_EMAIL='your_certificate_management_email'
    ```
 
 4. Run the deployment script:
@@ -79,7 +79,15 @@ Set up an A record for your domain (e.g., `mastodon.yourdomain.com`) pointing to
 - The deployment uses multiple Docker services. If you need to troubleshoot, you can check logs for specific services using:
   ```sh
   docker-compose logs [service_name]
- 
+
+
+### Q&A
+
+- Rate Limit Error - Let's Encrypt is refusing to issue a new certificate because you've reached the limit for this domain
+ ```sh
+  rm -rf /data/caddy/certificates
+  docker-compose restart caddy
+ ```
 ## Option 2: Manual Mastodon Instance Modification
 
 For users who already have a Mastodon instance and want to integrate it with RSS3 node.
