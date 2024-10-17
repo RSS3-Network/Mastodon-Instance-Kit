@@ -374,6 +374,9 @@ ADMIN_USERNAME="superadmin"
 ROLE="Admin"
 
 
+echo ""
+echo ""
+echo ""
 echo "We'll create an admin account for you while waiting for the SSL setup."
 # Create the admin user without email confirmation
   echo "Creating admin user $ADMIN_USERNAME without email service..."
@@ -384,6 +387,10 @@ echo "We'll create an admin account for you while waiting for the SSL setup."
   echo "✅ Admin user created successfully."
   echo "⚠️ IMPORTANT: The password for this account will be displayed shortly. Make sure to save it securely!"
   sleep 5
+  echo ""
+  echo ""
+  echo ""
+  echo ""
 
   echo "Admin user $ADMIN_USERNAME created successfully."
 
