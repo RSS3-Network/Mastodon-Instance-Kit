@@ -402,71 +402,71 @@ echo "We'll create an admin account for you while waiting for the SSL setup."
 echo "Approving admin account..."
 sudo docker-compose exec -T web bin/tootctl accounts approve $ADMIN_USERNAME
 
-# Add relay services to the mastodon instance for receiving mastodon data
-echo "Adding relay services directly to the database..."
-# SQL command to add relay services
-SQL_COMMANDS="
-INSERT INTO relays (inbox_url, follow_activity_id, created_at, updated_at, state)
-VALUES
-  ('https://relay.fedi.buzz/instance/fediscience.org', NULL, NOW(), NOW(), 2),
-  ('https://relay.fedi.buzz/instance/mas.to', NULL, NOW(), NOW(), 2),
- ('https://relay.fedi.buzz/instance/indieweb.social', NULL, NOW(), NOW(), 2),
- ('https://relay.fedi.buzz/instance/wetdry.world', NULL, NOW(), NOW(), 2),
- ('https://relay.fedi.buzz/instance/good.news', NULL, NOW(), NOW(), 2),
- ('https://relay.fedi.buzz/instance/mastodon.online', NULL, NOW(), NOW(), 2),
- ('https://relay.fedi.buzz/instance/mastodon.social', NULL, NOW(), NOW(), 2),
- ('https://relay.fedi.buzz/instance/universeodon.com', NULL, NOW(), NOW(), 2),
- ('https://relay.fedi.buzz/instance/tapbots.social', NULL, NOW(), NOW(), 2),
-  ('https://relay.fedi.buzz/instance/infosec.exchange', NULL, NOW(), NOW(), 2),
-   ('https://relay.fedi.buzz/instance/mediapart.social', NULL, NOW(), NOW(), 2),
-   ('https://relay.fedi.buzz/instance/journa.host', NULL, NOW(), NOW(), 2),
-   ('https://relay.fedi.buzz/instance/ard.social', NULL, NOW(), NOW(), 2),
-    ('https://relay.fedi.buzz/instance/w3c.social', NULL, NOW(), NOW(), 2),
-    ('https://relay.fedi.buzz/instance/edi.social', NULL, NOW(), NOW(), 2),
-    ('https://relay.fedi.buzz/instance/mstdn.social', NULL, NOW(), NOW(), 2),
-     ('https://relay.fedi.buzz/instance/twit.social', NULL, NOW(), NOW(), 2),
-     ('https://relay.fedi.buzz/instance/qoto.org', NULL, NOW(), NOW(), 2),
-   ('https://relay.fedi.buzz/instance/mastodon.xyz', NULL, NOW(), NOW(), 2),
- ('https://relay.fedi.buzz/instance/masto.ai', NULL, NOW(), NOW(), 2),
- ('https://relay.fedi.buzz/instance/securitymastod.one', NULL, NOW(), NOW(), 2),
-  ('https://relay.fedi.buzz/instance/mastodon.nuzgo.net', NULL, NOW(), NOW(), 2),
-  ('https://relay.fedi.buzz/instance/mastodon.cx', NULL, NOW(), NOW(), 2),
-  ('https://relay.fedi.buzz/instance/mastodon.network', NULL, NOW(), NOW(), 2),
-  ('https://relay.fedi.buzz/instance/linuxrocks.online', NULL, NOW(), NOW(), 2),
-  ('https://relay.fedi.buzz/instance/mastodon.land', NULL, NOW(), NOW(), 2),
-  ('https://relay.fedi.buzz/instance/mstdn.io', NULL, NOW(), NOW(), 2),
-  ('https://relay.fedi.buzz/instance/octodon.social', NULL, NOW(), NOW(), 2),
-  ('https://relay.fedi.buzz/instance/mastodon.club', NULL, NOW(), NOW(), 2),
-  ('https://relay.fedi.buzz/instance/mastodon.technology', NULL, NOW(), NOW(), 2),
-  ('https://relay.fedi.buzz/instance/niu.moe', NULL, NOW(), NOW(), 2),
-  ('https://relay.fedi.buzz/instance/mastodon.cloud', NULL, NOW(), NOW(), 2),
-  ('https://relay.fedi.buzz/instance/mastodon.host', NULL, NOW(), NOW(), 2),
-  ('https://relay.fedi.buzz/instance/mastodon.fun', NULL, NOW(), NOW(), 2),
-   ('https://relay.fedi.buzz/instance/msdyn365bc.social', NULL, NOW(), NOW(), 2),
-  ('https://relay.fedi.buzz/instance/fivem.social', NULL, NOW(), NOW(), 2),
-  ('https://relay.fedi.buzz/instance/pebble.social', NULL, NOW(), NOW(), 2),
-  ('https://relay.fedi.buzz/instance/xvlt.net', NULL, NOW(), NOW(), 2),
-  ('https://relay.fedi.buzz/instance/social.sunet.se', NULL, NOW(), NOW(), 2),
-  ('https://relay.fedi.buzz/instance/toot.aquilenet.fr', NULL, NOW(), NOW(), 2),
-  ('https://relay.fedi.buzz/instance/mastodon.quebec', NULL, NOW(), NOW(), 2),
-  ('https://relay.fedi.buzz/instance/federate.social', NULL, NOW(), NOW(), 2),
-  ('https://relay.fedi.buzz/instance/hackerspace.au', NULL, NOW(), NOW(), 2),
-  ('https://relay.fedi.buzz/instance/solarpunk.moe', NULL, NOW(), NOW(), 2),
-  ('https://relay.fedi.buzz/instance/catodon.social', NULL, NOW(), NOW(), 2),
-  ('https://relay.fedi.buzz/instance/mastodon.skrimmage.com', NULL, NOW(), NOW(), 2),
-  ('https://relay.fedi.buzz/instance/mast.hpc.social', NULL, NOW(), NOW(), 2),
-  ('https://relay.fedi.buzz/instance/towns.gay', NULL, NOW(), NOW(), 2),
-  ('https://relay.fedi.buzz/instance/pixelfed.fr', NULL, NOW(), NOW(), 2),
-  ('https://relay.fedi.buzz/instance/c7.io', NULL, NOW(), NOW(), 2);
- "
-
-# Execute the SQL commands in the Mastodon PostgreSQL database
-sudo docker-compose exec db psql -U mastodon -d mastodon -c "$SQL_COMMANDS"
-
-# Verify that the relays were added successfully
-VERIFY_SQL="SELECT * FROM relays LIMIT 10;"
-sudo docker-compose exec db psql -U mastodon -d mastodon -c "$VERIFY_SQL"
-echo "Relay services have been successfully added!"
+## Add relay services to the mastodon instance for receiving mastodon data
+#echo "Adding relay services directly to the database..."
+## SQL command to add relay services
+#SQL_COMMANDS="
+#INSERT INTO relays (inbox_url, follow_activity_id, created_at, updated_at, state)
+#VALUES
+#  ('https://relay.fedi.buzz/instance/fediscience.org', NULL, NOW(), NOW(), 2),
+#  ('https://relay.fedi.buzz/instance/mas.to', NULL, NOW(), NOW(), 2),
+# ('https://relay.fedi.buzz/instance/indieweb.social', NULL, NOW(), NOW(), 2),
+# ('https://relay.fedi.buzz/instance/wetdry.world', NULL, NOW(), NOW(), 2),
+# ('https://relay.fedi.buzz/instance/good.news', NULL, NOW(), NOW(), 2),
+# ('https://relay.fedi.buzz/instance/mastodon.online', NULL, NOW(), NOW(), 2),
+# ('https://relay.fedi.buzz/instance/mastodon.social', NULL, NOW(), NOW(), 2),
+# ('https://relay.fedi.buzz/instance/universeodon.com', NULL, NOW(), NOW(), 2),
+# ('https://relay.fedi.buzz/instance/tapbots.social', NULL, NOW(), NOW(), 2),
+#  ('https://relay.fedi.buzz/instance/infosec.exchange', NULL, NOW(), NOW(), 2),
+#   ('https://relay.fedi.buzz/instance/mediapart.social', NULL, NOW(), NOW(), 2),
+#   ('https://relay.fedi.buzz/instance/journa.host', NULL, NOW(), NOW(), 2),
+#   ('https://relay.fedi.buzz/instance/ard.social', NULL, NOW(), NOW(), 2),
+#    ('https://relay.fedi.buzz/instance/w3c.social', NULL, NOW(), NOW(), 2),
+#    ('https://relay.fedi.buzz/instance/edi.social', NULL, NOW(), NOW(), 2),
+#    ('https://relay.fedi.buzz/instance/mstdn.social', NULL, NOW(), NOW(), 2),
+#     ('https://relay.fedi.buzz/instance/twit.social', NULL, NOW(), NOW(), 2),
+#     ('https://relay.fedi.buzz/instance/qoto.org', NULL, NOW(), NOW(), 2),
+#   ('https://relay.fedi.buzz/instance/mastodon.xyz', NULL, NOW(), NOW(), 2),
+# ('https://relay.fedi.buzz/instance/masto.ai', NULL, NOW(), NOW(), 2),
+# ('https://relay.fedi.buzz/instance/securitymastod.one', NULL, NOW(), NOW(), 2),
+#  ('https://relay.fedi.buzz/instance/mastodon.nuzgo.net', NULL, NOW(), NOW(), 2),
+#  ('https://relay.fedi.buzz/instance/mastodon.cx', NULL, NOW(), NOW(), 2),
+#  ('https://relay.fedi.buzz/instance/mastodon.network', NULL, NOW(), NOW(), 2),
+#  ('https://relay.fedi.buzz/instance/linuxrocks.online', NULL, NOW(), NOW(), 2),
+#  ('https://relay.fedi.buzz/instance/mastodon.land', NULL, NOW(), NOW(), 2),
+#  ('https://relay.fedi.buzz/instance/mstdn.io', NULL, NOW(), NOW(), 2),
+#  ('https://relay.fedi.buzz/instance/octodon.social', NULL, NOW(), NOW(), 2),
+#  ('https://relay.fedi.buzz/instance/mastodon.club', NULL, NOW(), NOW(), 2),
+#  ('https://relay.fedi.buzz/instance/mastodon.technology', NULL, NOW(), NOW(), 2),
+#  ('https://relay.fedi.buzz/instance/niu.moe', NULL, NOW(), NOW(), 2),
+#  ('https://relay.fedi.buzz/instance/mastodon.cloud', NULL, NOW(), NOW(), 2),
+#  ('https://relay.fedi.buzz/instance/mastodon.host', NULL, NOW(), NOW(), 2),
+#  ('https://relay.fedi.buzz/instance/mastodon.fun', NULL, NOW(), NOW(), 2),
+#   ('https://relay.fedi.buzz/instance/msdyn365bc.social', NULL, NOW(), NOW(), 2),
+#  ('https://relay.fedi.buzz/instance/fivem.social', NULL, NOW(), NOW(), 2),
+#  ('https://relay.fedi.buzz/instance/pebble.social', NULL, NOW(), NOW(), 2),
+#  ('https://relay.fedi.buzz/instance/xvlt.net', NULL, NOW(), NOW(), 2),
+#  ('https://relay.fedi.buzz/instance/social.sunet.se', NULL, NOW(), NOW(), 2),
+#  ('https://relay.fedi.buzz/instance/toot.aquilenet.fr', NULL, NOW(), NOW(), 2),
+#  ('https://relay.fedi.buzz/instance/mastodon.quebec', NULL, NOW(), NOW(), 2),
+#  ('https://relay.fedi.buzz/instance/federate.social', NULL, NOW(), NOW(), 2),
+#  ('https://relay.fedi.buzz/instance/hackerspace.au', NULL, NOW(), NOW(), 2),
+#  ('https://relay.fedi.buzz/instance/solarpunk.moe', NULL, NOW(), NOW(), 2),
+#  ('https://relay.fedi.buzz/instance/catodon.social', NULL, NOW(), NOW(), 2),
+#  ('https://relay.fedi.buzz/instance/mastodon.skrimmage.com', NULL, NOW(), NOW(), 2),
+#  ('https://relay.fedi.buzz/instance/mast.hpc.social', NULL, NOW(), NOW(), 2),
+#  ('https://relay.fedi.buzz/instance/towns.gay', NULL, NOW(), NOW(), 2),
+#  ('https://relay.fedi.buzz/instance/pixelfed.fr', NULL, NOW(), NOW(), 2),
+#  ('https://relay.fedi.buzz/instance/c7.io', NULL, NOW(), NOW(), 2);
+# "
+#
+## Execute the SQL commands in the Mastodon PostgreSQL database
+#sudo docker-compose exec db psql -U mastodon -d mastodon -c "$SQL_COMMANDS"
+#
+## Verify that the relays were added successfully
+#VERIFY_SQL="SELECT * FROM relays LIMIT 10;"
+#sudo docker-compose exec db psql -U mastodon -d mastodon -c "$VERIFY_SQL"
+#echo "Relay services have been successfully added!"
 
 
 # Final messages
