@@ -482,6 +482,9 @@ echo ""
 echo ""
 echo ""
 echo "Let's have your instance gets federated relationships with other domains in the Fediverse"
+echo "Let's wait for 2 minutes for your web server to be ready!"
+# Sleep for 2 minutes
+sleep 120
 echo "We first follow some popular users from those domains!"
 # Mastodon instance URL and admin credentials
 MASTODON_INSTANCE=$DOMAIN_NAME
@@ -653,14 +656,6 @@ echo "All users have been processed!"
 echo "Federated connections are being established with the specified users.
 You should start seeing updates from them in your instance."
 echo""
-echo""
-echo""
-
-
-
-
-
-
 
 # Final messages
 echo ""
@@ -675,10 +670,10 @@ echo "If you encounter any issues accessing the site, please check the Caddy log
    docker-compose logs caddy"
 echo ""
 echo ""
-echo ""
 echo "👤 An admin user has been created with the following credentials:"
 echo "🔑 Admin Account Details:"
 echo "   Username: $ADMIN_USERNAME"
+echo "   Password: $ADMIN_PASSWORD"
 echo "   Email: $ADMIN_EMAIL"
 echo "   Password was generated earlier. Please go back and check."
 echo "⚠️ Please log in and change the generated admin password!"
