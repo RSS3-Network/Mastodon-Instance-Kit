@@ -482,9 +482,9 @@ echo ""
 echo ""
 echo ""
 echo "Let's have your instance gets federated relationships with other domains in the Fediverse"
-echo "Let's wait for 2 minutes for your web server to be ready!"
-# Sleep for 2 minutes
-sleep 120
+echo "Let's wait for 3 minutes for your web server to be ready!"
+# Sleep for 3 minutes
+sleep 180
 echo "We first follow some popular users from those domains!"
 # Mastodon instance URL and admin credentials
 MASTODON_INSTANCE="https://$DOMAIN_NAME"
