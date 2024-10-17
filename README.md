@@ -1,13 +1,19 @@
 # Mastodon Instance Kit for RSS3 Node Integration
 
-This repository provides tools to help you obtain a valid Mastodon endpoint for node deployment with a Mastodon worker at the [RSS3 Explorer](https://explorer.rss3.io/).
+This repository provides tools to help you obtain a `valid Mastodon endpoint` for node deployment with a Mastodon worker at the [RSS3 Explorer](https://explorer.rss3.io/).
 
 ## Two Options to Obtain Valid Mastodon Endpoints
 
 1. **Automated Mastodon Instance Deployment**: Quick setup of a new Mastodon instance.
 2. **Manual Mastodon Instance Modification**: Modify an existing Mastodon instance.
 
+
+
+
 Both options will guide you through the initial setup. Once completed, you'll obtain a valid Mastodon endpoint necessary for the RSS3 node deployment with a Mastodon worker at the RSS3 explorer.
+
+
+
 
 ## Option 1: Automated Mastodon Instance Deployment
 
@@ -17,6 +23,9 @@ For users who want to quickly set up a new Mastodon instance with RSS3 node inte
 
 This approach is ideal for those who want a simple solution that's operational right after deployment, with built-in connectivity to the wider Mastodon network.
 
+
+
+
 ### Prerequisites
 
 - A server with a `public IP` address
@@ -25,7 +34,7 @@ This approach is ideal for those who want a simple solution that's operational r
   - At least 2 CPU cores
   - Minimum 4GB RAM (8GB recommended)
   - At least 20GB of storage space (40GB recommended)
-- Open ports: 80 (HTTP), 443 (HTTPS), 9092 (Kafka)
+- Open ports: `80 (HTTP)`, `443 (HTTPS)`, `9092 (Kafka)`
   
 ### Deployment Steps
 1. Configure domain's DNS settings:
@@ -43,9 +52,9 @@ Set up an A record for your domain (e.g., `mastodon.yourdomain.com`) pointing to
 3. Set the required environment variables:
 
    ```sh
-   export DB_PASSWORD='your_secure_db_password'
+   export POSTGRES_PASSWORD='your_secure_db_password'
    export REDIS_PASSWORD='your_secure_redis_password'
-   export LETS_ENCRYPT_EMAIL='your_domain_certificate_management_email'
+   LETS_ENCRYPT_EMAIL='your_certificate_management_email'
    ```
 
 4. Run the deployment script:
