@@ -30,6 +30,8 @@ generate_random_string() {
 echo "🚀 Welcome to the Mastodon Deployment Script"
 echo "This script will guide you through setting up a Mastodon instance."
 echo ""
+echo ""
+echo ""
 # Gather necessary information
 read -p "Enter your domain name (e.g., mastodon.example.com): " DOMAIN_NAME
 read -p "Enter your server's public IP address: " IP_ADDRESS
@@ -46,6 +48,10 @@ if [ -z "$POSTGRES_PASSWORD" ] || [ -z "$REDIS_PASSWORD" ] || [-Z "$LETS_ENCRYPT
     echo ""
     exit 1
 fi
+
+echo ""
+echo ""
+echo ""
 
 # Clone Mastodon repository
 echo "Cloning Mastodon repository..."
@@ -321,6 +327,9 @@ if [ $? -ne 0 ]; then
 fi
 
 # Start Docker containers
+echo ""
+echo ""
+echo ""
 echo "Starting Docker containers..."
 docker_compose_sudo up -d
 if [ $? -ne 0 ]; then
@@ -409,74 +418,234 @@ echo "We'll create an admin account for you while waiting for the SSL setup."
 echo "Approving admin account..."
 sudo docker-compose exec -T web bin/tootctl accounts approve $ADMIN_USERNAME
 
-## Add relay services to the mastodon instance for receiving mastodon data
-#echo "Adding relay services directly to the database..."
-## SQL command to add relay services
-#SQL_COMMANDS="
-#INSERT INTO relays (inbox_url, follow_activity_id, created_at, updated_at, state)
-#VALUES
-#  ('https://relay.fedi.buzz/instance/fediscience.org', NULL, NOW(), NOW(), 2),
-#  ('https://relay.fedi.buzz/instance/mas.to', NULL, NOW(), NOW(), 2),
-# ('https://relay.fedi.buzz/instance/indieweb.social', NULL, NOW(), NOW(), 2),
-# ('https://relay.fedi.buzz/instance/wetdry.world', NULL, NOW(), NOW(), 2),
-# ('https://relay.fedi.buzz/instance/good.news', NULL, NOW(), NOW(), 2),
-# ('https://relay.fedi.buzz/instance/mastodon.online', NULL, NOW(), NOW(), 2),
-# ('https://relay.fedi.buzz/instance/mastodon.social', NULL, NOW(), NOW(), 2),
-# ('https://relay.fedi.buzz/instance/universeodon.com', NULL, NOW(), NOW(), 2),
-# ('https://relay.fedi.buzz/instance/tapbots.social', NULL, NOW(), NOW(), 2),
-#  ('https://relay.fedi.buzz/instance/infosec.exchange', NULL, NOW(), NOW(), 2),
-#   ('https://relay.fedi.buzz/instance/mediapart.social', NULL, NOW(), NOW(), 2),
-#   ('https://relay.fedi.buzz/instance/journa.host', NULL, NOW(), NOW(), 2),
-#   ('https://relay.fedi.buzz/instance/ard.social', NULL, NOW(), NOW(), 2),
-#    ('https://relay.fedi.buzz/instance/w3c.social', NULL, NOW(), NOW(), 2),
-#    ('https://relay.fedi.buzz/instance/edi.social', NULL, NOW(), NOW(), 2),
-#    ('https://relay.fedi.buzz/instance/mstdn.social', NULL, NOW(), NOW(), 2),
-#     ('https://relay.fedi.buzz/instance/twit.social', NULL, NOW(), NOW(), 2),
-#     ('https://relay.fedi.buzz/instance/qoto.org', NULL, NOW(), NOW(), 2),
-#   ('https://relay.fedi.buzz/instance/mastodon.xyz', NULL, NOW(), NOW(), 2),
-# ('https://relay.fedi.buzz/instance/masto.ai', NULL, NOW(), NOW(), 2),
-# ('https://relay.fedi.buzz/instance/securitymastod.one', NULL, NOW(), NOW(), 2),
-#  ('https://relay.fedi.buzz/instance/mastodon.nuzgo.net', NULL, NOW(), NOW(), 2),
-#  ('https://relay.fedi.buzz/instance/mastodon.cx', NULL, NOW(), NOW(), 2),
-#  ('https://relay.fedi.buzz/instance/mastodon.network', NULL, NOW(), NOW(), 2),
-#  ('https://relay.fedi.buzz/instance/linuxrocks.online', NULL, NOW(), NOW(), 2),
-#  ('https://relay.fedi.buzz/instance/mastodon.land', NULL, NOW(), NOW(), 2),
-#  ('https://relay.fedi.buzz/instance/mstdn.io', NULL, NOW(), NOW(), 2),
-#  ('https://relay.fedi.buzz/instance/octodon.social', NULL, NOW(), NOW(), 2),
-#  ('https://relay.fedi.buzz/instance/mastodon.club', NULL, NOW(), NOW(), 2),
-#  ('https://relay.fedi.buzz/instance/mastodon.technology', NULL, NOW(), NOW(), 2),
-#  ('https://relay.fedi.buzz/instance/niu.moe', NULL, NOW(), NOW(), 2),
-#  ('https://relay.fedi.buzz/instance/mastodon.cloud', NULL, NOW(), NOW(), 2),
-#  ('https://relay.fedi.buzz/instance/mastodon.host', NULL, NOW(), NOW(), 2),
-#  ('https://relay.fedi.buzz/instance/mastodon.fun', NULL, NOW(), NOW(), 2),
-#   ('https://relay.fedi.buzz/instance/msdyn365bc.social', NULL, NOW(), NOW(), 2),
-#  ('https://relay.fedi.buzz/instance/fivem.social', NULL, NOW(), NOW(), 2),
-#  ('https://relay.fedi.buzz/instance/pebble.social', NULL, NOW(), NOW(), 2),
-#  ('https://relay.fedi.buzz/instance/xvlt.net', NULL, NOW(), NOW(), 2),
-#  ('https://relay.fedi.buzz/instance/social.sunet.se', NULL, NOW(), NOW(), 2),
-#  ('https://relay.fedi.buzz/instance/toot.aquilenet.fr', NULL, NOW(), NOW(), 2),
-#  ('https://relay.fedi.buzz/instance/mastodon.quebec', NULL, NOW(), NOW(), 2),
-#  ('https://relay.fedi.buzz/instance/federate.social', NULL, NOW(), NOW(), 2),
-#  ('https://relay.fedi.buzz/instance/hackerspace.au', NULL, NOW(), NOW(), 2),
-#  ('https://relay.fedi.buzz/instance/solarpunk.moe', NULL, NOW(), NOW(), 2),
-#  ('https://relay.fedi.buzz/instance/catodon.social', NULL, NOW(), NOW(), 2),
-#  ('https://relay.fedi.buzz/instance/mastodon.skrimmage.com', NULL, NOW(), NOW(), 2),
-#  ('https://relay.fedi.buzz/instance/mast.hpc.social', NULL, NOW(), NOW(), 2),
-#  ('https://relay.fedi.buzz/instance/towns.gay', NULL, NOW(), NOW(), 2),
-#  ('https://relay.fedi.buzz/instance/pixelfed.fr', NULL, NOW(), NOW(), 2),
-#  ('https://relay.fedi.buzz/instance/c7.io', NULL, NOW(), NOW(), 2);
-# "
-#
-## Execute the SQL commands in the Mastodon PostgreSQL database
-#sudo docker-compose exec db psql -U mastodon -d mastodon -c "$SQL_COMMANDS"
-#
-## Verify that the relays were added successfully
-#VERIFY_SQL="SELECT * FROM relays LIMIT 10;"
-#sudo docker-compose exec db psql -U mastodon -d mastodon -c "$VERIFY_SQL"
-#echo "Relay services have been successfully added!"
+# Add relay services to the mastodon instance for receiving mastodon data
+echo ""
+echo ""
+echo ""
+echo "Adding relay services directly to the database..."
+# SQL command to add relay services
+SQL_COMMANDS="
+INSERT INTO relays (inbox_url, follow_activity_id, created_at, updated_at, state)
+VALUES
+  ('https://relay.fedi.buzz/instance/fediscience.org', NULL, NOW(), NOW(), 2),
+  ('https://relay.fedi.buzz/instance/mas.to', NULL, NOW(), NOW(), 2),
+ ('https://relay.fedi.buzz/instance/indieweb.social', NULL, NOW(), NOW(), 2),
+ ('https://relay.fedi.buzz/instance/wetdry.world', NULL, NOW(), NOW(), 2),
+ ('https://relay.fedi.buzz/instance/good.news', NULL, NOW(), NOW(), 2),
+ ('https://relay.fedi.buzz/instance/mastodon.online', NULL, NOW(), NOW(), 2),
+ ('https://relay.fedi.buzz/instance/mastodon.social', NULL, NOW(), NOW(), 2),
+ ('https://relay.fedi.buzz/instance/universeodon.com', NULL, NOW(), NOW(), 2),
+ ('https://relay.fedi.buzz/instance/tapbots.social', NULL, NOW(), NOW(), 2),
+  ('https://relay.fedi.buzz/instance/infosec.exchange', NULL, NOW(), NOW(), 2),
+   ('https://relay.fedi.buzz/instance/mediapart.social', NULL, NOW(), NOW(), 2),
+   ('https://relay.fedi.buzz/instance/journa.host', NULL, NOW(), NOW(), 2),
+   ('https://relay.fedi.buzz/instance/ard.social', NULL, NOW(), NOW(), 2),
+    ('https://relay.fedi.buzz/instance/w3c.social', NULL, NOW(), NOW(), 2),
+    ('https://relay.fedi.buzz/instance/edi.social', NULL, NOW(), NOW(), 2),
+    ('https://relay.fedi.buzz/instance/mstdn.social', NULL, NOW(), NOW(), 2),
+     ('https://relay.fedi.buzz/instance/twit.social', NULL, NOW(), NOW(), 2),
+     ('https://relay.fedi.buzz/instance/qoto.org', NULL, NOW(), NOW(), 2);
+ "
+
+# Execute the SQL commands in the Mastodon PostgreSQL database
+sudo docker-compose exec db psql -U mastodon -d mastodon -c "$SQL_COMMANDS"
+
+# Verify that the relays were added successfully
+VERIFY_SQL="SELECT * FROM relays LIMIT 10;"
+sudo docker-compose exec db psql -U mastodon -d mastodon -c "$VERIFY_SQL"
+echo "Relay services have been successfully added!"
+
+
+
+
+
+echo ""
+echo ""
+echo ""
+echo "Let's have your instance gets federated relationships with other domains in the Fediverse"
+echo "We first follow some popular users from those domains!"
+# Mastodon instance URL and admin credentials
+MASTODON_INSTANCE=$DOMAIN_NAME
+ADMIN_USERNAME=$LETS_ENCRYPT_EMAIL # Replace with your actual admin username/email
+ADMIN_PASSWORD="4e3ed713a38f12021f79a05a5ba38148"
+CLIENT_NAME="FollowUsersApp"
+REDIRECT_URI="urn:ietf:wg:oauth:2.0:oob"
+
+# Array of user handles to follow
+users=(
+  "mastodon@mastodon.social"  # Domain: mastodon.social
+  "georgetakei@universeodon.com"  # Domain: universeodon.com
+  "rbreich@masto.ai"  # Domain: masto.ai
+  "FediTips@social.growyourown.services"  # Domain: social.growyourown.services
+  "_kokt@simkey.net"  # Domain: simkey.net
+  "ProPublica@newsie.social"  # Domain: newsie.social
+  "APoD@botsin.space"  # Domain: botsin.space
+  "stephenfry@mastodonapp.uk"  # Domain: mastodonapp.uk
+  "gretathunberg@mastodon.nu"  # Domain: mastodon.nu
+  "EUCommission@ec.social-network.europa.eu"  # Domain: ec.social-network.europa.eu
+  "molly0xfff@hachyderm.io"  # Domain: hachyderm.io
+  "auschwitzmuseum@mastodon.world"  # Domain: mastodon.world
+  "ralphruthe@troet.cafe"  # Domain: troet.cafe
+  "SwiftOnSecurity@infosec.exchange"  # Domain: infosec.exchange
+  "afelia@chaos.social"  # Domain: chaos.social
+  "MarcElias@mas.to"  # Domain: mas.to
+  "primalmotion@antisocial.ly"  # Domain: antisocial.ly
+  "erictopol@mstdn.social"  # Domain: mstdn.social
+  "pluralistic@mamot.fr"  # Domain: mamot.fr
+  "internetarchive@mastodon.archive.org"  # Domain: mastodon.archive.org
+  "tagesschau@ard.social"  # Domain: ard.social
+  "ct_bergstrom@fediscience.org"  # Domain: fediscience.org
+  "omakano@omaka.nr1a.inc"  # Domain: omaka.nr1a.inc
+  "evacide@hachyderm.io"  # Domain: hachyderm.io
+  "kuketzblog@social.tchncs.de"  # Domain: social.tchncs.de
+  "viticci@macstories.net"  # Domain: macstories.net
+  "freemo@qoto.org"  # Domain: qoto.org
+  "timnitGebru@dair-community.social"  # Domain: dair-community.social
+  "ralf@rottmann.social"  # Domain: rottmann.social
+  "GreatDismal@mastodon.social"  # Domain: mastodon.social
+  "techconnectify@mas.to"  # Domain: mas.to
+  "aral@mastodon.ar.al"  # Domain: mastodon.ar.al
+  "wonderofscience@mastodon.social"  # Domain: mastodon.social
+  "godpod@universeodon.com"  # Domain: universeodon.com
+  "neilhimself@mastodon.social"  # Domain: mastodon.social
+  "scalzi@mastodon.social"  # Domain: mastodon.social
+  "tazgetroete@mastodon.social"  # Domain: mastodon.social
+  "Sheril@mastodon.social"  # Domain: mastodon.social
+  "signalapp@mastodon.world"  # Domain: mastodon.world
+  "mattblaze@federate.social"  # Domain: federate.social
+  "Mozilla@mozilla.social"  # Domain: mozilla.social
+  "foone@digipres.club"  # Domain: digipres.club
+  "LaQuadrature@mamot.fr"  # Domain: mamot.fr
+  "tapbots@tapbots.social"  # Domain: tapbots.social
+  "trumpet@mas.to"  # Domain: mas.to
+  "abandonedamerica@mastodon.social"  # Domain: mastodon.social
+  "ralphruthe@troet.cafe"  # Domain: troet.cafe
+  "bfdi@social.bund.de"  # Domain: social.bund.de
+  "ralph@rottmann.social"  # Domain: rottmann.social
+  "socraticethics@mastodon.online"  # Domain: mastodon.online
+  "micahflee@infosec.exchange"  # Domain: infosec.exchange
+  "DerPostillon@mastodon.social"  # Domain: mastodon.social
+  "mrloverstein@mastodon.social"  # Domain: mastodon.social
+  "eff@mastodon.social"  # Domain: mastodon.social
+  "zdfmagazin@edi.social"  # Domain: edi.social
+  "elonjet@mastodon.social"  # Domain: mastodon.social
+  "gossithedog@cyberplace.social"  # Domain: cyberplace.social
+  "torproject@mastodon.social"  # Domain: mastodon.social
+  "Jennifer@hachyderm.io"  # Domain: hachyderm.io
+  "AbandonedAmerica@mastodon.social"  # Domain: mastodon.social
+  "arstechnica@mastodon.social"  # Domain: mastodon.social
+  "MattBinder@mastodon.social"  # Domain: mastodon.social
+  "taylorlorenz@mastodon.social"  # Domain: mastodon.social
+  "JeffJarvis@mastodon.social"  # Domain: mastodon.social
+  "davidallengreen@mastodon.green"  # Domain: mastodon.green
+  "Trumpet@mas.to"  # Domain: mas.to
+  "katiekatie@mastodon.social"  # Domain: mastodon.social
+  "dangillmor@mastodon.social"  # Domain: mastodon.social
+  "LinusTorvalds@social.kernel.org"  # Domain: social.kernel.org
+  "jamesgunn@c.im"  # Domain: c.im
+  "MarcElias@mas.to"  # Domain: mas.to
+  "God@universeodon.com"  # Domain: universeodon.com
+  "ElonMuskJet@mastodon.social"  # Domain: mastodon.social
+  "chiefTwit@twit.social"  # Domain: twit.social
+)
+
+# Ensure jq is installed
+if ! command -v jq &> /dev/null; then
+    echo "jq is required but not installed. Please install jq."
+    exit 1
+fi
+
+# Step 1: Register a new application (OAuth client)
+echo "Registering a new application..."
+RESPONSE=$(curl -s -X POST "$MASTODON_INSTANCE/api/v1/apps" \
+    -F "client_name=$CLIENT_NAME" \
+    -F "redirect_uris=$REDIRECT_URI" \
+    -F "scopes=read write follow admin:read" \
+    -F "website=$MASTODON_INSTANCE")
+
+# Extract client_id and client_secret
+CLIENT_ID=$(echo "$RESPONSE" | jq -r '.client_id')
+CLIENT_SECRET=$(echo "$RESPONSE" | jq -r '.client_secret')
+
+if [ -z "$CLIENT_ID" ] || [ -z "$CLIENT_SECRET" ]; then
+    echo "Failed to register the application. Response: $RESPONSE"
+    exit 1
+fi
+
+echo "Application registered successfully with client_id: $CLIENT_ID"
+
+# Step 2: Get an access token using the client credentials
+echo "Requesting access token..."
+TOKEN_RESPONSE=$(curl -s -X POST "$MASTODON_INSTANCE/oauth/token" \
+    -F "client_id=$CLIENT_ID" \
+    -F "client_secret=$CLIENT_SECRET" \
+    -F "grant_type=password" \
+    -F "username=$ADMIN_USERNAME" \
+    -F "password=$ADMIN_PASSWORD" \
+    -F "scope=read write follow admin:read")
+
+ACCESS_TOKEN=$(echo "$TOKEN_RESPONSE" | jq -r '.access_token')
+
+if [ -z "$ACCESS_TOKEN" ] || [ "$ACCESS_TOKEN" == "null" ]; then
+    echo "Failed to get access token. Response: $TOKEN_RESPONSE"
+    exit 1
+fi
+
+echo "Access token received: $ACCESS_TOKEN"
+
+# Function to follow a user based on their handle using federated search
+follow_user() {
+    local user_handle=$1
+
+    # Step 1: Search for the user in the federated network
+    echo "Searching for user: $user_handle..."
+    search_result=$(curl -s --header "Authorization: Bearer $ACCESS_TOKEN" \
+        "$MASTODON_INSTANCE/api/v2/search?q=$user_handle&resolve=true")
+
+    # Step 2: Extract the user ID from the search result
+    user_id=$(echo "$search_result" | jq -r '.accounts[0].id')
+
+    if [[ "$user_id" == "null" || -z "$user_id" ]]; then
+        echo "Failed to find user with handle $user_handle. Skipping..."
+        return
+    fi
+
+    echo "Found user: $user_handle with ID: $user_id"
+
+    # Step 3: Follow the user using the user ID
+    follow_response=$(curl -s --header "Authorization: Bearer $ACCESS_TOKEN" \
+        -X POST "$MASTODON_INSTANCE/api/v1/accounts/$user_id/follow")
+
+    if [[ "$follow_response" == *"error"* ]]; then
+        echo "Failed to follow $user_handle. Response: $follow_response"
+    else
+        echo "Successfully followed $user_handle!"
+    fi
+}
+
+# Loop through the users and follow each one
+for user in "${users[@]}"; do
+    follow_user "$user"
+    sleep 5  # Optional delay to avoid rate limiting
+done
+
+
+echo "All users have been processed!"
+echo "Federated connections are being established with the specified users.
+You should start seeing updates from them in your instance."
+echo""
+echo""
+echo""
+
+
+
+
+
 
 
 # Final messages
+echo ""
+echo ""
 echo ""
 echo "🎉 Setup Complete! 🎉"
 echo "✅ Mastodon deployment completed successfully!"
@@ -486,6 +655,8 @@ echo "Then you can restart your Docker services to run your Mastodon Instance"
 echo "If you encounter any issues accessing the site, please check the Caddy logs:
    docker-compose logs caddy"
 echo ""
+echo ""
+echo ""
 echo "👤 An admin user has been created with the following credentials:"
 echo "🔑 Admin Account Details:"
 echo "   Username: $ADMIN_USERNAME"
@@ -493,6 +664,9 @@ echo "   Email: $ADMIN_EMAIL"
 echo "   Password was generated earlier. Please go back and check."
 echo "⚠️ Please log in and change the generated admin password!"
 echo ""
+echo ""
+echo ""
+
 echo "🔌 When your server is ready to use, please use '$IP_ADDRESS:9092' as the Mastodon endpoint to complete the RSS3 Node deployment with a Mastodon worker at https://explorer.rss3.io/"
 echo "📡 Your instance will receive messages from major Mastodon instances due to the configured relay server subscriptions."
 echo "📚 For more information on managing your Mastodon instance, visit: https://docs.joinmastodon.org/"
