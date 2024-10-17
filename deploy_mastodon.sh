@@ -391,7 +391,26 @@ echo "We'll create an admin account for you while waiting for the SSL setup."
   echo "Creating admin user $ADMIN_USERNAME without email service..."
   echo "   Username: $ADMIN_USERNAME"
   echo "   Email: $ADMIN_EMAIL"
-  sudo docker-compose exec web tootctl accounts create $ADMIN_USERNAME --email $ADMIN_EMAIL --confirmed
+  sudo docker-compose exec web tootctl accounts create $ADMIN_USERNAME --email $ADMIN_EMAIL --confirmed | tee tootctl_output.txt
+
+  # Add a small delay to ensure the output file is completely written
+  sleep 5
+  # Path to the output file
+  OUTPUT_FILE="tootctl_output.txt"
+  # Check if the file exists
+  if [ -f "$OUTPUT_FILE" ]; then
+    # Extract the password from the file
+    ADMIN_PASSWORD=$(grep -oP '(?<=New password: ).*' "$OUTPUT_FILE")
+
+    # Check if the password was found
+    if [ -n "$ADMIN_PASSWORD" ]; then
+      echo "✅ Successfully generated the password: $ADMIN_PASSWORD"
+    else
+      echo "❌ Failed to retrieve the password."
+    fi
+  else
+    echo "❌ The file $OUTPUT_FILE does not exist."
+  fi
 
   echo "✅ Admin user created successfully."
   echo "⚠️ IMPORTANT: The password for this account will be displayed shortly. Make sure to save it securely!"
@@ -467,7 +486,7 @@ echo "We first follow some popular users from those domains!"
 # Mastodon instance URL and admin credentials
 MASTODON_INSTANCE=$DOMAIN_NAME
 ADMIN_USERNAME=$LETS_ENCRYPT_EMAIL # Replace with your actual admin username/email
-ADMIN_PASSWORD="4e3ed713a38f12021f79a05a5ba38148"
+ADMIN_PASSWORD=$ADMIN_PASSWORD
 CLIENT_NAME="FollowUsersApp"
 REDIRECT_URI="urn:ietf:wg:oauth:2.0:oob"
 
