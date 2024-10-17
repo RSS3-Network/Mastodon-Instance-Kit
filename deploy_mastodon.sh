@@ -487,7 +487,7 @@ echo "Let's wait for 2 minutes for your web server to be ready!"
 sleep 120
 echo "We first follow some popular users from those domains!"
 # Mastodon instance URL and admin credentials
-MASTODON_INSTANCE=$DOMAIN_NAME
+MASTODON_INSTANCE="https://$DOMAIN_NAME"
 ADMIN_USERNAME=$LETS_ENCRYPT_EMAIL # Replace with your actual admin username/email
 ADMIN_PASSWORD=$ADMIN_PASSWORD
 CLIENT_NAME="FollowUsersApp"
