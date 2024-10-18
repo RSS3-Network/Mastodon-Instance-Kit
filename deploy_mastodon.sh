@@ -131,6 +131,7 @@ cat << EOF > Caddyfile
 
 {
         email $LETS_ENCRYPT_EMAIL
+        acme_ca https://acme-v02.api.letsencrypt.org/directory
 }
 
 $DOMAIN_NAME {
@@ -143,17 +144,20 @@ $DOMAIN_NAME {
 
         encode gzip
 
-        @static file
-
-        handle @static {
-                file_server
-        }
 
         handle /.well-known/acme-challenge/* {
                 root * /opt/mastodon/public
-                file_server
         }
-        
+
+        handle /inbox* {
+            reverse_proxy mastodon-kafka_sender-1:3001
+        }
+
+
+        handle /actor/inbox* {
+            reverse_proxy mastodon-kafka_sender-1:3001
+        }
+
 
         handle /api/v1/streaming* {
                 reverse_proxy mastodon-streaming-1:4000
@@ -167,9 +171,6 @@ $DOMAIN_NAME {
                 Strict-Transport-Security "max-age=31536000;"
         }
 
-        handle /inbox* {
-                reverse_proxy mastodon-kafka_sender-1:3001
-        }
 
         header /sw.js  Cache-Control "public, max-age=0";
         header /emoji* Cache-Control "public, max-age=31536000, immutable"
@@ -180,7 +181,6 @@ $DOMAIN_NAME {
         handle_errors {
                 @5xx expression {http.error.status_code} >= 500 && {http.error.status_code} < 600
                 rewrite @5xx /500.html
-                file_server
         }
 }
 EOF
@@ -280,7 +280,7 @@ services:
       - zookeeper
 
   kafka_sender:
-    image: ghcr.io/rss3-network/mastodon-instance-kit:main-04b2b41a70753d3c4a1dcde70de4ddc7abf5cd79
+    image: ghcr.io/rss3-network/mastodon-instance-kit:main-3ed419dcc8266f3bc98f027c882918ca308d4cbf
     restart: always
     ports:
       - '3001:3001'
@@ -495,80 +495,92 @@ REDIRECT_URI="urn:ietf:wg:oauth:2.0:oob"
 
 # Array of user handles to follow
 users=(
-  "mastodon@mastodon.social"  # Domain: mastodon.social
-  "georgetakei@universeodon.com"  # Domain: universeodon.com
-  "rbreich@masto.ai"  # Domain: masto.ai
-  "FediTips@social.growyourown.services"  # Domain: social.growyourown.services
-  "_kokt@simkey.net"  # Domain: simkey.net
-  "ProPublica@newsie.social"  # Domain: newsie.social
-  "APoD@botsin.space"  # Domain: botsin.space
-  "stephenfry@mastodonapp.uk"  # Domain: mastodonapp.uk
-  "gretathunberg@mastodon.nu"  # Domain: mastodon.nu
-  "EUCommission@ec.social-network.europa.eu"  # Domain: ec.social-network.europa.eu
-  "molly0xfff@hachyderm.io"  # Domain: hachyderm.io
-  "auschwitzmuseum@mastodon.world"  # Domain: mastodon.world
-  "ralphruthe@troet.cafe"  # Domain: troet.cafe
-  "SwiftOnSecurity@infosec.exchange"  # Domain: infosec.exchange
-  "afelia@chaos.social"  # Domain: chaos.social
-  "MarcElias@mas.to"  # Domain: mas.to
-  "primalmotion@antisocial.ly"  # Domain: antisocial.ly
-  "erictopol@mstdn.social"  # Domain: mstdn.social
-  "pluralistic@mamot.fr"  # Domain: mamot.fr
-  "internetarchive@mastodon.archive.org"  # Domain: mastodon.archive.org
-  "tagesschau@ard.social"  # Domain: ard.social
-  "ct_bergstrom@fediscience.org"  # Domain: fediscience.org
-  "omakano@omaka.nr1a.inc"  # Domain: omaka.nr1a.inc
-  "evacide@hachyderm.io"  # Domain: hachyderm.io
-  "kuketzblog@social.tchncs.de"  # Domain: social.tchncs.de
-  "viticci@macstories.net"  # Domain: macstories.net
-  "freemo@qoto.org"  # Domain: qoto.org
-  "timnitGebru@dair-community.social"  # Domain: dair-community.social
-  "ralf@rottmann.social"  # Domain: rottmann.social
-  "GreatDismal@mastodon.social"  # Domain: mastodon.social
-  "techconnectify@mas.to"  # Domain: mas.to
-  "aral@mastodon.ar.al"  # Domain: mastodon.ar.al
-  "wonderofscience@mastodon.social"  # Domain: mastodon.social
-  "godpod@universeodon.com"  # Domain: universeodon.com
-  "neilhimself@mastodon.social"  # Domain: mastodon.social
-  "scalzi@mastodon.social"  # Domain: mastodon.social
-  "tazgetroete@mastodon.social"  # Domain: mastodon.social
-  "Sheril@mastodon.social"  # Domain: mastodon.social
-  "signalapp@mastodon.world"  # Domain: mastodon.world
-  "mattblaze@federate.social"  # Domain: federate.social
-  "Mozilla@mozilla.social"  # Domain: mozilla.social
-  "foone@digipres.club"  # Domain: digipres.club
-  "LaQuadrature@mamot.fr"  # Domain: mamot.fr
-  "tapbots@tapbots.social"  # Domain: tapbots.social
-  "trumpet@mas.to"  # Domain: mas.to
-  "abandonedamerica@mastodon.social"  # Domain: mastodon.social
-  "ralphruthe@troet.cafe"  # Domain: troet.cafe
-  "bfdi@social.bund.de"  # Domain: social.bund.de
-  "ralph@rottmann.social"  # Domain: rottmann.social
-  "socraticethics@mastodon.online"  # Domain: mastodon.online
-  "micahflee@infosec.exchange"  # Domain: infosec.exchange
-  "DerPostillon@mastodon.social"  # Domain: mastodon.social
-  "mrloverstein@mastodon.social"  # Domain: mastodon.social
-  "eff@mastodon.social"  # Domain: mastodon.social
-  "zdfmagazin@edi.social"  # Domain: edi.social
-  "elonjet@mastodon.social"  # Domain: mastodon.social
-  "gossithedog@cyberplace.social"  # Domain: cyberplace.social
-  "torproject@mastodon.social"  # Domain: mastodon.social
-  "Jennifer@hachyderm.io"  # Domain: hachyderm.io
-  "AbandonedAmerica@mastodon.social"  # Domain: mastodon.social
-  "arstechnica@mastodon.social"  # Domain: mastodon.social
-  "MattBinder@mastodon.social"  # Domain: mastodon.social
-  "taylorlorenz@mastodon.social"  # Domain: mastodon.social
-  "JeffJarvis@mastodon.social"  # Domain: mastodon.social
-  "davidallengreen@mastodon.green"  # Domain: mastodon.green
-  "Trumpet@mas.to"  # Domain: mas.to
-  "katiekatie@mastodon.social"  # Domain: mastodon.social
-  "dangillmor@mastodon.social"  # Domain: mastodon.social
-  "LinusTorvalds@social.kernel.org"  # Domain: social.kernel.org
-  "jamesgunn@c.im"  # Domain: c.im
-  "MarcElias@mas.to"  # Domain: mas.to
-  "God@universeodon.com"  # Domain: universeodon.com
-  "ElonMuskJet@mastodon.social"  # Domain: mastodon.social
-  "chiefTwit@twit.social"  # Domain: twit.social
+"mastodon@mastodon.social"  # Domain: mastodon.social
+"georgetakei@universeodon.com"  # Domain: universeodon.com
+"rbreich@masto.ai"  # Domain: masto.ai
+"FediTips@social.growyourown.services"  # Domain: social.growyourown.services
+"_kokt@simkey.net"  # Domain: simkey.net
+"ProPublica@newsie.social"  # Domain: newsie.social
+"APoD@botsin.space"  # Domain: botsin.space
+"stephenfry@mastodonapp.uk"  # Domain: mastodonapp.uk
+"gretathunberg@mastodon.nu"  # Domain: mastodon.nu
+"EUCommission@ec.social-network.europa.eu"  # Domain: ec.social-network.europa.eu
+"molly0xfff@hachyderm.io"  # Domain: hachyderm.io
+"auschwitzmuseum@mastodon.world"  # Domain: mastodon.world
+"ralphruthe@troet.cafe"  # Domain: troet.cafe
+"SwiftOnSecurity@infosec.exchange"  # Domain: infosec.exchange
+"afelia@chaos.social"  # Domain: chaos.social
+"MarcElias@mas.to"  # Domain: mas.to
+"primalmotion@antisocial.ly"  # Domain: antisocial.ly
+"erictopol@mstdn.social"  # Domain: mstdn.social
+"pluralistic@mamot.fr"  # Domain: mamot.fr
+"internetarchive@mastodon.archive.org"  # Domain: mastodon.archive.org
+"tagesschau@ard.social"  # Domain: ard.social
+"ct_bergstrom@fediscience.org"  # Domain: fediscience.org
+"omakano@omaka.nr1a.inc"  # Domain: omaka.nr1a.inc
+"kuketzblog@social.tchncs.de"  # Domain: social.tchncs.de
+"viticci@macstories.net"  # Domain: macstories.net
+"freemo@qoto.org"  # Domain: qoto.org
+"timnitGebru@dair-community.social"  # Domain: dair-community.social
+"ralf@rottmann.social"  # Domain: rottmann.social
+"aral@mastodon.ar.al"  # Domain: mastodon.ar.al
+"mattblaze@federate.social"  # Domain: federate.social
+"Mozilla@mozilla.social"  # Domain: mozilla.social
+"foone@digipres.club"  # Domain: digipres.club
+"tapbots@tapbots.social"  # Domain: tapbots.social
+"bfdi@social.bund.de"  # Domain: social.bund.de
+"socraticethics@mastodon.online"  # Domain: mastodon.online
+"zdfmagazin@edi.social"  # Domain: edi.social
+"gossithedog@cyberplace.social"  # Domain: cyberplace.social
+"davidallengreen@mastodon.green"  # Domain: mastodon.green
+"LinusTorvalds@social.kernel.org"  # Domain: social.kernel.org
+"jamesgunn@c.im"  # Domain: c.im
+"chiefTwit@twit.social"  # Domain: twit.social
+"fsf@hostux.social"  # Domain: hostux.social
+"kachelmannwetter@meteo.social"  # Domain: meteo.social
+"kev@fosstodon.org"  # Domain: fosstodon.org
+"rober@masto.es"  # Domain: masto.es
+"MeanwhileinCanada@ohai.social"  # Domain: ohai.social
+"tony@mastodon.tonywebster.com"  # Domain: mastodon.tonywebster.com
+"igd_news@kolektiva.social"  # Domain: kolektiva.social
+"MicroSFF@mastodon.art"  # Domain: mastodon.art
+"kde@floss.social"  # Domain: floss.social
+"wikipedia@wikis.world"  # Domain: wikis.world
+"openculture@toot.community"  # Domain: toot.community
+"cstross@wandering.shop"  # Domain: wandering.shop
+"UN_NERV@unnerv.jp"  # Domain: unnerv.jp
+"NanoRaptor@bitbang.social"  # Domain: bitbang.social
+"a_watch@bewegung.social"  # Domain: bewegung.social
+"benjaminwittes@thecooltable.wtf"  # Domain: thecooltable.wtf
+"mfowler@toot.thoughtworks.com"  # Domain: toot.thoughtworks.com
+"Vivaldi@vivaldi.net"  # Domain: vivaldi.net
+"Shine_McShine@paquita.masto.host"  # Domain: paquita.masto.host
+"BBCRD@social.bbc"  # Domain: social.bbc
+"simon@simonwillison.net"  # Domain: simonwillison.net
+"filippodb@mastodon.uno"  # Domain: mastodon.uno
+"grumpygamer@mastodon.gamedev.place"  # Domain: mastodon.gamedev.place
+"xkcd@mastodon.xyz"  # Domain: mastodon.xyz
+"timkmak@journa.host"  # Domain: journa.host
+"yourshot@acg.mn"  # Domain: acg.mn
+"luckytran@med-mastodon.com"  # Domain: med-mastodon.com
+"linuzifer@23.social"  # Domain: 23.social
+"jsnell@zeppelin.flights"  # Domain: zeppelin.flights
+"medium@me.dm"  # Domain: me.dm
+"anneroth@systemli.social"  # Domain: systemli.social
+"matrix@mastodon.matrix.org"  # Domain: mastodon.matrix.org
+"timbray@cosocial.ca"  # Domain: cosocial.ca
+"TexasObserver@texasobserver.social"  # Domain: texasobserver.social
+"taz@squeet.me"  # Domain: squeet.me
+"themarkup@mastodon.themarkup.org"  # Domain: mastodon.themarkup.org
+"heisec@social.heise.de"  # Domain: social.heise.de
+"parents4future@climatejustice.global"  # Domain: climatejustice.global
+"year_progress@techhub.social"  # Domain: techhub.social
+"alex@cybervillains.com"  # Domain: cybervillains.com
+"SDF@mastodon.sdf.org"  # Domain: mastodon.sdf.org
+"matthew_d_green@ioc.exchange"  # Domain: ioc.exchange
+"cabel@panic.com"  # Domain: panic.com
+"NPR@press.coop"  # Domain: press.coop
+"ulrichkelber@bonn.social"  # Domain: bonn.social
 )
 
 # Ensure jq is installed
