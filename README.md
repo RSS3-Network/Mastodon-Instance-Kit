@@ -33,7 +33,7 @@ This approach is ideal for those who want a simple solution that's operational r
 - Sufficient server hardware resources:
   - At least 2 CPU cores
   - Minimum 4GB RAM (8GB recommended)
-  - At least 20GB of storage space (40GB recommended)
+  - At least 50GB of storage space (80GB recommended)
 - Open ports: `80 (HTTP)`, `443 (HTTPS)`, `9092 (Kafka)`
   
 ### Deployment Steps
