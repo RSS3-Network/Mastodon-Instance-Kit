@@ -31,6 +31,11 @@ def actor_inbox():
                 response = requests.get(object_url_with_activity)
                 if response.status_code == 200:
                     full_object = response.json()
+
+                    # Modify the 'id' to remove '/activity' at the end if it exists
+                    if 'id' in full_object and full_object['id'].endswith('/activity'):
+                        full_object['id'] = full_object['id'][:-9]  # Removes the last 9 characters (/activity)
+
                 else:
                     return jsonify({
                         'status': 'error',
