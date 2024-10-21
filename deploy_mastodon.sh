@@ -280,7 +280,7 @@ services:
       - zookeeper
 
   kafka_sender:
-    image: ghcr.io/rss3-network/mastodon-instance-kit:main-3ed419dcc8266f3bc98f027c882918ca308d4cbf
+    image: ghcr.io/rss3-network/mastodon-instance-kit:main-0359d7920db633f14f2c36f831f9ff47bd6aa7f0
     restart: always
     ports:
       - '3001:3001'
